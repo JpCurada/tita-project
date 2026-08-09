@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PasswordField } from "@/components/PasswordField";
@@ -42,8 +43,14 @@ export default function SignInPage() {
     <main className="mx-auto grid min-h-screen max-w-5xl items-center gap-12 px-5 py-12 lg:grid-cols-[1.05fr_minmax(0,380px)]">
       {/* Thesis: the form this replaces, quoted in its own words. */}
       <section className="hidden lg:block">
-        <span className="eyebrow">Republic of the Philippines</span>
-        <h1 className="page-title mt-3 text-[2.5rem] leading-[1.1]">
+        <Image
+          src="/pit-logo.png"
+          alt="Seal of the Palompon Institute of Technology"
+          width={72}
+          height={72}
+          priority
+        />
+        <h1 className="page-title mt-5 text-[2.5rem] leading-[1.1]">
           Palompon Institute of Technology
           <span className="mt-1 block font-normal italic text-ink-pencil">
             Faculty Association
@@ -58,12 +65,12 @@ export default function SignInPage() {
           </span>{" "}
           in the amount of{" "}
           <span className="tnum border-b border-rule-strong px-1 font-mono text-[0.9375rem] text-ink">
-            PHP 12,000.00
+            P 12,000.00
           </span>{" "}
           payable within five (5) months to be deducted every quincena in the
           amount of{" "}
           <span className="tnum border-b border-rule-strong px-1 font-mono text-[0.9375rem] text-ink">
-            PHP 1,200.00
+            P 1,200.00
           </span>
           .”
         </p>
@@ -71,7 +78,7 @@ export default function SignInPage() {
         <dl className="mt-10 grid max-w-md grid-cols-3 gap-px border border-rule bg-rule">
           {[
             ["Filed", "Queue number issued at once"],
-            ["Reviewed", "Two members, then the chair"],
+            ["Reviewed", "Two committee members, then the chair"],
             ["Released", "Recorded and archived"],
           ].map(([term, detail]) => (
             <div key={term} className="bg-leaf px-3 py-3">

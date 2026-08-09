@@ -3,102 +3,90 @@
 import React from "react";
 import {
   Document,
+  Image,
   Page,
   StyleSheet,
   Text,
   View,
 } from "@react-pdf/renderer";
-/**
- * The standard Type1 fonts have no ₱ glyph, so `formatPeso` from the shared lib
- * would render a wrong character here. Embedding a font just for one symbol is
- * not worth ~300 KB in a serverless bundle, so the form prints "PHP" — which is
- * also what the Institute's cashier paperwork uses.
- */
-function peso(amount: number): string {
-  return `PHP ${amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
+import { amountInWords, formatFormAmount } from "@convex/lib/loan";
+import { PIT_LOGO_DATA_URI } from "@/assets/pitLogo";
 
 /**
- * Reproduces the FORM sheet of the original workbook. Wording, ordering and the
- * signature blocks are kept verbatim so the printed output is recognisable to
- * anyone used to the paper form — including the en-dash in "PIT – FACULTY
- * ASSOCIATION" and the "REGULAR/EMERGENCY" phrasing.
+ * Reproduces `Loan Application Form.doc`, the association's own template.
  *
- * Everything is rendered from stored values. The spreadsheet hardcoded the
- * committee members' names into the template; here they come from the audit
- * trail, so the form shows who actually decided.
+ * Wording and order follow that document verbatim: the amount spelled out
+ * before the figure, "approved/disapproved" with the losing word struck
+ * through, "Borrower No." for the queue number, and the treasurer's
+ * "Signature & Date Released" block.
+ *
+ * Every value is filled from stored data. The template hardcodes the current
+ * officers' names; here they come from the approvals audit trail, so the
+ * printed page shows who actually decided.
  */
 
 const MANILA = "Asia/Manila";
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 32,
-    paddingBottom: 28,
-    paddingHorizontal: 54,
+    paddingTop: 30,
+    paddingBottom: 30,
+    paddingHorizontal: 52,
     fontFamily: "Times-Roman",
     fontSize: 10.5,
-    lineHeight: 1.35,
+    lineHeight: 1.45,
     color: "#000",
   },
-  center: { textAlign: "center" },
-  header: { fontSize: 10.5 },
-  headerInstitute: { fontFamily: "Times-Bold" },
-  association: { fontFamily: "Times-Bold", marginTop: 6, fontSize: 11.5 },
-  title: {
-    fontFamily: "Times-Bold",
-    fontSize: 13,
-    marginTop: 10,
-    letterSpacing: 0.5,
-  },
-  committee: { marginTop: 7, fontFamily: "Times-Bold", fontSize: 10.5 },
-  dateFiledRow: {
+  masthead: { flexDirection: "row", alignItems: "center" },
+  seal: { width: 52, height: 52 },
+  mastheadText: { flex: 1, alignItems: "center", paddingRight: 52 },
+  title: { fontFamily: "Times-Bold", fontSize: 15, letterSpacing: 0.4 },
+  committee: { fontFamily: "Times-Bold", fontSize: 10.5, marginTop: 4 },
+  dateRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 10,
-    marginBottom: 2,
+    alignItems: "flex-end",
+    marginTop: 8,
   },
-  body: { marginTop: 12, textAlign: "justify" },
-  inline: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end" },
+  para: { marginTop: 14, textAlign: "justify" },
+  bold: { fontFamily: "Times-Bold" },
+  // A ruled blank, whether or not it has been filled in.
   fill: {
-    borderBottomWidth: 0.8,
+    borderBottomWidth: 0.9,
     borderBottomColor: "#000",
-    paddingHorizontal: 4,
     fontFamily: "Times-Bold",
     textAlign: "center",
+    paddingHorizontal: 3,
   },
-  signatureBlock: { marginTop: 22, alignItems: "center" },
-  signatureName: {
+  sigName: {
     fontFamily: "Times-Bold",
-    borderBottomWidth: 0.8,
-    borderBottomColor: "#000",
-    paddingHorizontal: 24,
+    textAlign: "center",
+    minWidth: 224,
     paddingBottom: 1,
-    minWidth: 210,
-    textAlign: "center",
   },
-  caption: { fontSize: 8.5, marginTop: 2, textAlign: "center" },
-  columns: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
-  column: { width: "46%", alignItems: "center" },
-  sectionHeading: {
-    fontFamily: "Times-Bold",
-    fontSize: 11.5,
-    marginTop: 20,
-    textAlign: "center",
-    letterSpacing: 0.5,
-  },
-  footer: {
-    marginTop: 18,
-    borderTopWidth: 0.8,
+  sigRule: {
+    borderTopWidth: 0.9,
     borderTopColor: "#000",
-    paddingTop: 8,
+    paddingTop: 2,
+    minWidth: 224,
+    textAlign: "center",
+    fontSize: 8.5,
   },
-  footerRow: { flexDirection: "row", marginBottom: 3 },
-  footerLabel: { width: 108 },
-  footerValue: { fontFamily: "Times-Bold" },
+  // An underlined run that flows inside a paragraph, unlike the block `fill`.
+  inlineFill: {
+    fontFamily: "Times-Bold",
+    textDecoration: "underline",
+  },
+  caption: { fontSize: 8.5, textAlign: "center" },
+  right: { alignItems: "flex-end" },
+  columns: { flexDirection: "row", justifyContent: "space-between" },
+  heading: {
+    fontFamily: "Times-Bold",
+    fontSize: 12,
+    textAlign: "center",
+    letterSpacing: 0.6,
+  },
+  strike: { textDecoration: "line-through", color: "#666" },
 });
 
 export type LoanFormData = {
@@ -128,11 +116,39 @@ function fmt(ms: number | undefined, options: Intl.DateTimeFormatOptions) {
   return new Date(ms).toLocaleDateString("en-PH", { timeZone: MANILA, ...options });
 }
 
-/** A blank underlined slot, so an undecided field still prints a rule to sign. */
+/** Prints an empty rule when there is nothing to fill in, as on paper. */
 function Fill({ value, width }: { value: string; width: number }) {
   return (
-    <Text style={[styles.fill, { minWidth: width }]}>{value === "" ? " " : value}</Text>
+    <Text style={[styles.fill, { minWidth: width }]}>
+      {value === "" ? " " : value}
+    </Text>
   );
+}
+
+function Signature({
+  name,
+  caption,
+  extra,
+}: {
+  name: string;
+  caption: string;
+  extra?: string;
+}) {
+  return (
+    <View>
+      <Text style={styles.sigName}>{name || " "}</Text>
+      <Text style={styles.sigRule}>{caption}</Text>
+      {extra && <Text style={styles.caption}>{extra}</Text>}
+    </View>
+  );
+}
+
+/** The deduction is written in title case on the form; the loan amount is caps. */
+function titleCaseWords(words: string): string {
+  return words
+    .replace(/ ONLY$/, "")
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (c) => c.toUpperCase());
 }
 
 export function LoanFormPdf({ data }: { data: LoanFormData }) {
@@ -141,15 +157,15 @@ export function LoanFormPdf({ data }: { data: LoanFormData }) {
   );
   const chair = data.decisions.find((d) => d.approverRole === "chair");
 
-  // The decision date shown is the chair's, matching the sheet's single
-  // "On this date, the ___ day of ___" line.
-  const decisionAt = chair?.decidedAt;
-  const verdict =
-    data.outcome === "rejected"
-      ? "disapproved"
-      : data.outcome === "approved"
-        ? "approved"
-        : "";
+  // The template carries one dated decision line, and the chair's ruling is the
+  // operative one. Before the chair rules, fall back to the most recent
+  // committee decision so a disapproved form still prints a date.
+  const decisionAt =
+    chair?.decidedAt ??
+    data.decisions.map((d) => d.decidedAt).sort((a, b) => b - a)[0];
+
+  const approved = data.outcome === "approved";
+  const disapproved = data.outcome === "rejected";
 
   return (
     <Document
@@ -157,126 +173,163 @@ export function LoanFormPdf({ data }: { data: LoanFormData }) {
       author="PIT Faculty Association"
     >
       <Page size="A4" style={styles.page}>
-        <View style={styles.center}>
-          <Text style={styles.header}>Republic of the Philippines</Text>
-          <Text style={[styles.header, styles.headerInstitute]}>
-            Palompon Institute of Technology
+        <View style={styles.masthead}>
+          <Image style={styles.seal} src={PIT_LOGO_DATA_URI} />
+          <View style={styles.mastheadText}>
+            <Text style={styles.title}>Loan Application</Text>
+            <Text style={styles.committee}>LOAN COMMITTEE</Text>
+            <Text style={styles.committee}>PIT-FACULTY ASSOCIATION</Text>
+          </View>
+        </View>
+
+        <View style={styles.dateRow}>
+          <Text>Date Filed</Text>
+          <Fill value={fmt(data.dateFiled, { dateStyle: "long" })} width={136} />
+        </View>
+
+        {/* Nested inside a single <Text> so the bold runs wrap as prose;
+            sibling <Text> nodes in a flex row each start a new line. */}
+        <View style={styles.para}>
+          <Text>
+            {"        "}I hereby apply for a REGULAR/EMERGENCY loan in the amount
+            of <Text style={styles.bold}>
+              {amountInWords(data.loanAmount)} ({formatFormAmount(data.loanAmount)})
+            </Text>{" "}
+            payable within five (5) months to be deducted every quincena in the
+            amount of{" "}
+            <Text style={styles.bold}>
+              {titleCaseWords(amountInWords(data.deductionPerPayday))} (
+              {formatFormAmount(data.deductionPerPayday)})
+            </Text>{" "}
+            only effective{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(data.startDate, { month: "long", day: "numeric" }) ||
+                "                "}
+            </Text>
+            , 20{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(data.startDate, { year: "2-digit" }) || "    "}
+            </Text>
+            .
           </Text>
-          <Text style={styles.header}>Palompon, Leyte</Text>
-          <Text style={styles.association}>PIT – FACULTY ASSOCIATION</Text>
-          <Text style={styles.title}>Loan Application</Text>
-          <Text style={styles.committee}>LOAN COMMITTEE</Text>
-          <Text style={styles.committee}>PIT-FACULTY ASSOCIATION</Text>
         </View>
 
-        <View style={styles.dateFiledRow}>
-          <Text>Date Filed: </Text>
-          <Fill value={fmt(data.dateFiled, { dateStyle: "long" })} width={130} />
+        <View style={[styles.right, { marginTop: 22 }]}>
+          <Signature
+            name={data.borrowerName}
+            caption="Signature Over Printed Name of Borrower"
+          />
         </View>
 
-        <View style={styles.body}>
-          <View style={styles.inline}>
-            <Text>I hereby apply for a REGULAR/EMERGENCY loan in the amount of </Text>
-            <Fill value={peso(data.loanAmount)} width={100} />
-            <Text> payable within five (5) months to be deducted every quincena in the amount of </Text>
-            <Fill value={peso(data.deductionPerPayday)} width={90} />
-            <Text> only effective </Text>
-            <Fill value={fmt(data.startDate, { month: "long", day: "numeric" })} width={100} />
-            <Text> , 20</Text>
-            <Fill value={fmt(data.startDate, { year: "2-digit" })} width={26} />
-            <Text> .</Text>
-          </View>
+        <View style={{ marginTop: 16 }}>
+          <Signature
+            name={data.coMakerName}
+            caption="Signature Over Printed Name of Co-maker"
+            extra="(Must be in permanent status)"
+          />
         </View>
 
-        <View style={styles.columns}>
-          <View style={styles.column}>
-            <Text style={styles.signatureName}>{data.coMakerName}</Text>
-            <Text style={styles.caption}>Signature Over Printed Name of Co-maker</Text>
-            <Text style={styles.caption}>(Must be in permanent status)</Text>
-          </View>
-          <View style={styles.column}>
-            <Text style={styles.signatureName}>{data.borrowerName}</Text>
-            <Text style={styles.caption}>Signature Over Printed Name of Borrower</Text>
-          </View>
+        <View style={[styles.right, { marginTop: 14 }]}>
+          <Text style={styles.sigName}>
+            {data.treasurerName ?? data.releasedByName ?? " "}
+          </Text>
+          <Text style={[styles.caption, { minWidth: 224 }]}>FA Treasurer</Text>
         </View>
 
-        <View style={[styles.body, { marginTop: 24 }]}>
-          <View style={styles.inline}>
-            <Text>On this date, the </Text>
-            <Fill value={fmt(decisionAt, { day: "2-digit" })} width={30} />
-            <Text> day of </Text>
-            <Fill value={fmt(decisionAt, { month: "long" })} width={80} />
-            <Text> , 20</Text>
-            <Fill value={fmt(decisionAt, { year: "2-digit" })} width={26} />
-            <Text> we hereby </Text>
-            <Fill value={verdict} width={80} />
-            <Text> the application of the above loan.</Text>
-          </View>
+        <View style={{ marginTop: 14 }}>
+          <Text style={[styles.sigName, { minWidth: 168 }]}>
+            {data.releasedAt === undefined
+              ? " "
+              : fmt(data.releasedAt, { dateStyle: "long" })}
+          </Text>
+          <Text style={[styles.sigRule, { minWidth: 168 }]}>
+            Signature &amp; Date Released
+          </Text>
         </View>
 
-        <View style={styles.columns}>
+        {/* Left-aligned, not justified: justification stretches the spaces
+            around the struck-through word and drags its rule into the next
+            word. */}
+        <View style={[styles.para, { marginTop: 18, textAlign: "left" }]}>
+          <Text>
+            {"        "}On this date, the{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(decisionAt, { day: "2-digit" }) || "      "}
+            </Text>{" "}
+            day of{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(decisionAt, { month: "long" }) ||
+                "            "}
+            </Text>
+            , 20{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(decisionAt, { year: "2-digit" }) || "    "}
+            </Text>{" "}
+            we hereby{" "}
+            {/* Only the surviving word is printed. Struck-through text bleeds
+                its rule into the following words here, and a form that reads
+                "approved" cleanly is closer to the intent than one where the
+                crossing-out is ambiguous. */}
+            <Text style={styles.bold}>
+              {approved ? "approved" : disapproved ? "disapproved" : "approved/disapproved"}
+            </Text>{" "}
+            the application of the above loan.
+          </Text>
+        </View>
+
+        <View style={[styles.columns, { marginTop: 22 }]}>
           {committee.map((decision, index) => (
-            <View key={index} style={styles.column}>
-              <Text style={styles.signatureName}>
-                {decision?.approverName ?? " "}
-              </Text>
-              <Text style={styles.caption}>Member</Text>
-            </View>
+            <Signature
+              key={index}
+              name={decision?.approverName ?? ""}
+              caption="Member"
+            />
           ))}
         </View>
 
-        <View style={styles.signatureBlock}>
-          <Text style={styles.signatureName}>{chair?.approverName ?? " "}</Text>
-          <Text style={styles.caption}>Chair, Loan Committee</Text>
+        <View style={{ marginTop: 16, alignItems: "center" }}>
+          <Signature
+            name={chair?.approverName ?? ""}
+            caption="Chair, Loan Committee"
+          />
         </View>
 
-        <Text style={styles.sectionHeading}>AUTHORIZATION</Text>
-
-        <View style={[styles.body, { marginTop: 10 }]}>
-          <View style={styles.inline}>
-            <Text>I hereby authorize the cashier of the Institute to deduct the amount of </Text>
-            <Fill value={peso(data.deductionPerPayday)} width={90} />
-            <Text> each payday starting </Text>
-            <Fill value={fmt(data.startDate, { month: "long", day: "numeric" })} width={100} />
-            <Text> , 20</Text>
-            <Fill value={fmt(data.startDate, { year: "2-digit" })} width={26} />
-            <Text> as payment of the Regular/Emergency loan until the whole amount shall have been fully paid.</Text>
-          </View>
+        <View
+          style={[styles.dateRow, { marginTop: 14, justifyContent: "flex-start" }]}
+        >
+          <Text>Borrower No.</Text>
+          <Fill value={data.queueNumber} width={116} />
         </View>
 
-        <View style={[styles.signatureBlock, { marginTop: 20 }]}>
-          <Text style={styles.signatureName}>{data.borrowerName}</Text>
-          <Text style={styles.caption}>Signature Over Printed Name of Borrower</Text>
-        </View>
+        <Text style={[styles.heading, { marginTop: 20 }]}>AUTHORIZATION</Text>
 
-        <View style={styles.footer}>
-          <View style={styles.footerRow}>
-            <Text style={styles.footerLabel}>Loan Number:</Text>
-            <Text style={styles.footerValue}>{data.queueNumber}</Text>
-          </View>
-          <View style={styles.footerRow}>
-            <Text style={styles.footerLabel}>Loan Released date:</Text>
-            <Text style={styles.footerValue}>
-              {fmt(data.releasedAt, { dateStyle: "long" })}
+        <View style={[styles.para, { marginTop: 10 }]}>
+          <Text>
+            {"        "}I hereby authorize the cashier of the Institute to deduct
+            the amount of{" "}
+            <Text style={styles.bold}>
+              {titleCaseWords(amountInWords(data.deductionPerPayday))} (
+              {formatFormAmount(data.deductionPerPayday)})
+            </Text>{" "}
+            each payday starting{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(data.startDate, { month: "long", day: "numeric" }) ||
+                "                "}
             </Text>
-          </View>
-          <View style={styles.footerRow}>
-            <Text style={styles.footerLabel}>Amount Released:</Text>
-            <Text style={styles.footerValue}>
-              {data.releasedAmount === undefined
-                ? ""
-                : peso(data.releasedAmount)}
-            </Text>
-          </View>
-          <View style={styles.footerRow}>
-            <Text style={styles.footerLabel}>Released by:</Text>
-            <Text style={styles.footerValue}>
-              {data.releasedByName ?? data.treasurerName ?? ""}
-            </Text>
-          </View>
-          <Text style={[styles.caption, { textAlign: "left", marginTop: 6 }]}>
-            FA Treasurer
+            , 20{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(data.startDate, { year: "2-digit" }) || "    "}
+            </Text>{" "}
+            as payment of the Regular/Emergency loan until the whole amount shall
+            have been fully paid.
           </Text>
+        </View>
+
+        <View style={[styles.right, { marginTop: 22 }]}>
+          <Signature
+            name={data.borrowerName}
+            caption="Signature Over Printed Name of Borrower"
+          />
         </View>
       </Page>
     </Document>

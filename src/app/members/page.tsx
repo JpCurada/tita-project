@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { errorMessage, roleTitle } from "@/lib/format";
+import { errorMessage, roleSeat } from "@/lib/format";
 
 const ROLES = ["member", "committee1", "committee2", "chair", "treasurer"] as const;
 type Role = (typeof ROLES)[number];
@@ -92,7 +92,7 @@ export default function MembersPage() {
               <select id="role" name="role" className="input" defaultValue="member">
                 {ROLES.map((role) => (
                   <option key={role} value={role}>
-                    {roleTitle(role)}
+                    {roleSeat(role)}
                   </option>
                 ))}
               </select>
@@ -172,7 +172,7 @@ export default function MembersPage() {
                     >
                       {ROLES.map((role) => (
                         <option key={role} value={role}>
-                          {roleTitle(role)}
+                          {roleSeat(role)}
                         </option>
                       ))}
                     </select>

@@ -6,7 +6,7 @@ import {
   formatDate,
   formatDateTime,
   formatPeso,
-  roleTitle,
+  roleSeat,
   type Status,
 } from "@/lib/format";
 
@@ -153,7 +153,7 @@ export function ApplicationDetail({
 
                 <div className={last ? "pb-0" : "pb-7"}>
                   <p className="text-sm font-medium leading-tight">
-                    {roleTitle(role)}
+                    {roleSeat(role)}
                   </p>
 
                   {decision === undefined ? (

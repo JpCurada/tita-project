@@ -2,6 +2,7 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useMutation, useQuery } from "convex/react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
@@ -59,13 +60,23 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto max-w-5xl px-5">
           {/* Masthead: the association names itself, as it does on the form. */}
           <div className="flex items-baseline justify-between gap-4 pt-4">
-            <Link href="/dashboard" className="group">
-              <span className="eyebrow block text-ink-faint">
-                Palompon Institute of Technology
-              </span>
-              <span className="font-display text-base font-medium tracking-[-0.01em] text-ink transition-colors group-hover:text-viridian">
-                Faculty Association
-                <span className="text-ink-faint"> · Loan Committee</span>
+            <Link href="/dashboard" className="group flex items-center gap-2.5">
+              <Image
+                src="/pit-logo.png"
+                alt=""
+                width={34}
+                height={34}
+                className="shrink-0"
+                priority
+              />
+              <span>
+                <span className="eyebrow block text-ink-faint">
+                  Palompon Institute of Technology
+                </span>
+                <span className="font-display text-base font-medium tracking-[-0.01em] text-ink transition-colors group-hover:text-viridian">
+                  Faculty Association
+                  <span className="text-ink-faint"> · Loan Committee</span>
+                </span>
               </span>
             </Link>
 
