@@ -15,12 +15,12 @@ export default function ApplyPage() {
 
   const [loanType, setLoanType] = useState<"regular" | "emergency">("regular");
   const [loanAmount, setLoanAmount] = useState<number>(LOAN_AMOUNTS[0]);
-  const [coMakerMemberId, setCoMakerMemberId] = useState<string>("");
+  const [coMakerMemberId, setCoMakerMemberId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Derived, never independently chosen — the spreadsheet let these two drift
-  // apart, which is how a ₱6,000 loan could be paired with a ₱1,800 deduction.
+  // Derived, never chosen separately. The workbook offered these as two loose
+  // dropdowns, so a 6,000 loan could be paired with an 1,800 deduction.
   const deduction = deductionFor(loanAmount) ?? 0;
 
   async function handleSubmit(event: React.FormEvent) {
@@ -28,7 +28,7 @@ export default function ApplyPage() {
     setError(null);
 
     if (coMakerMemberId === "") {
-      setError("Please choose a co-maker.");
+      setError("Choose a co-maker before filing.");
       return;
     }
 
@@ -49,22 +49,28 @@ export default function ApplyPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="font-serif text-2xl font-semibold">Loan application</h1>
-      <p className="mt-1 text-sm text-ink-muted">
-        Payable within five (5) months, deducted every quincena.
+      <span className="eyebrow">Loan Committee</span>
+      <h1 className="page-title mt-1.5">Loan application</h1>
+      <p className="mt-2 max-w-lg font-display text-[0.9375rem] leading-relaxed text-ink-pencil">
+        Payable within five (5) months, deducted every quincena. Your loan
+        number is issued the moment you file.
       </p>
 
-      <form onSubmit={handleSubmit} className="card mt-6 space-y-6 p-6">
+      <hr className="mt-6 border-rule-strong" />
+
+      <form onSubmit={handleSubmit} className="mt-8 space-y-9">
         <fieldset>
           <legend className="label">Loan type</legend>
-          <div className="flex gap-3">
-            {(["regular", "emergency"] as const).map((type) => (
+          <div className="flex border border-rule-strong">
+            {(["regular", "emergency"] as const).map((type, index) => (
               <label
                 key={type}
-                className={`flex flex-1 cursor-pointer items-center justify-center rounded-md border px-4 py-2.5 text-sm capitalize transition ${
+                className={`flex-1 cursor-pointer px-4 py-2.5 text-center text-sm capitalize transition-colors ${
+                  index > 0 ? "border-l border-rule-strong" : ""
+                } ${
                   loanType === type
-                    ? "border-stone-900 bg-stone-900 text-white"
-                    : "border-stone-300 bg-white hover:bg-stone-50"
+                    ? "bg-ink font-medium text-leaf"
+                    : "text-ink-pencil hover:bg-black/[0.03]"
                 }`}
               >
                 <input
@@ -81,31 +87,50 @@ export default function ApplyPage() {
           </div>
         </fieldset>
 
-        <div>
-          <label className="label" htmlFor="loanAmount">
-            Loan amount
-          </label>
-          <select
-            id="loanAmount"
-            className="input"
-            value={loanAmount}
-            onChange={(event) => setLoanAmount(Number(event.target.value))}
-          >
-            {LOAN_AMOUNTS.map((amount) => (
-              <option key={amount} value={amount}>
-                {formatPeso(amount)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="rounded-md bg-stone-100 px-4 py-3">
-          <p className="text-sm text-ink-muted">Deduction per payday</p>
-          <p className="mt-0.5 text-lg font-semibold">{formatPeso(deduction)}</p>
-          <p className="mt-1 text-xs text-ink-muted">
-            10 payments over 5 months — computed from the loan amount.
+        {/* Amount and its consequence, shown as one statement. */}
+        <fieldset>
+          <legend className="label">Amount</legend>
+          <div className="grid gap-px border border-rule bg-rule sm:grid-cols-3">
+            {LOAN_AMOUNTS.map((amount) => {
+              const selected = amount === loanAmount;
+              return (
+                <label
+                  key={amount}
+                  className={`cursor-pointer bg-leaf px-4 py-4 transition-colors ${
+                    selected ? "bg-viridian-wash" : "hover:bg-black/[0.03]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="loanAmount"
+                    value={amount}
+                    checked={selected}
+                    onChange={() => setLoanAmount(amount)}
+                    className="sr-only"
+                  />
+                  <span
+                    className={`tnum block font-mono text-lg ${
+                      selected ? "font-medium text-viridian" : "text-ink"
+                    }`}
+                  >
+                    {formatPeso(amount)}
+                  </span>
+                  <span
+                    className={`mt-1 block text-xs ${
+                      selected ? "text-viridian/75" : "text-ink-faint"
+                    }`}
+                  >
+                    {formatPeso(deductionFor(amount) ?? 0)} × 10 paydays
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          <p className="mt-2.5 text-xs text-ink-faint">
+            The deduction follows from the amount: ten payments across five
+            months.
           </p>
-        </div>
+        </fieldset>
 
         <div>
           <label className="label" htmlFor="coMaker">
@@ -116,10 +141,10 @@ export default function ApplyPage() {
             className="input"
             value={coMakerMemberId}
             onChange={(event) => setCoMakerMemberId(event.target.value)}
-            disabled={coMakers === undefined}
+            disabled={coMakers === undefined || coMakers.length === 0}
           >
             <option value="">
-              {coMakers === undefined ? "Loading…" : "Select a co-maker"}
+              {coMakers === undefined ? "Loading" : "Select a co-maker"}
             </option>
             {coMakers?.map((candidate) => (
               <option key={candidate._id} value={candidate._id}>
@@ -128,33 +153,36 @@ export default function ApplyPage() {
               </option>
             ))}
           </select>
-          <p className="mt-1.5 text-xs text-ink-muted">
-            Must be in permanent status. Only permanent members appear here.
+          <p className="mt-2.5 text-xs text-ink-faint">
+            Must be in permanent status, so only permanent members are listed.
           </p>
           {coMakers?.length === 0 && (
-            <p className="mt-1.5 text-xs text-red-700">
-              No eligible co-makers are registered yet. Ask the chair to add
-              permanent members.
+            <p className="mt-2.5 border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide">
+              No permanent members are registered yet. Ask the chair to add them
+              before you file.
             </p>
           )}
         </div>
 
         {error !== null && (
-          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p
+            role="alert"
+            className="border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
+          >
             {error}
           </p>
         )}
 
-        <div className="flex justify-end gap-3 border-t border-stone-200 pt-5">
+        <div className="flex items-center justify-end gap-5 border-t border-rule-strong pt-6">
           <button
             type="button"
-            className="btn-secondary"
+            className="btn-quiet"
             onClick={() => router.push("/dashboard")}
           >
             Cancel
           </button>
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "Filing…" : "File application"}
+            {submitting ? "Filing" : "File application"}
           </button>
         </div>
       </form>

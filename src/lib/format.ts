@@ -50,36 +50,17 @@ export function statusLabel(
 ): string {
   switch (status) {
     case "pending":
-      return "Awaiting committee";
+      return "With the committee";
     case "chair_review":
-      return "Awaiting chair";
+      return "With the chair";
     case "approved":
-      return "Approved — for release";
+      return "For release";
     case "released":
       return "Released";
+    // "Disapproved" is the word the form and the decision buttons use; keep
+    // one vocabulary across the interface.
     case "archived":
-      return outcome === "rejected" ? "Rejected" : "Completed";
-  }
-}
-
-export function statusClasses(
-  status: Status,
-  outcome?: "approved" | "rejected",
-): string {
-  if (status === "archived") {
-    return outcome === "rejected"
-      ? "bg-red-100 text-red-800"
-      : "bg-stone-200 text-stone-700";
-  }
-  switch (status) {
-    case "pending":
-      return "bg-amber-100 text-amber-800";
-    case "chair_review":
-      return "bg-blue-100 text-blue-800";
-    case "approved":
-      return "bg-emerald-100 text-emerald-800";
-    case "released":
-      return "bg-emerald-100 text-emerald-800";
+      return outcome === "rejected" ? "Disapproved" : "Released";
   }
 }
 

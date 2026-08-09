@@ -1,5 +1,6 @@
 "use client";
 
+import { QueueStub } from "@/components/QueueStub";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   formatDate,
@@ -36,7 +37,8 @@ export type DetailApplication = {
   decisions: Decision[];
 };
 
-const APPROVAL_SEQUENCE = ["committee1", "committee2", "chair"] as const;
+/** The chain is genuinely ordered, so the rail encodes real sequence. */
+const CHAIN = ["committee1", "committee2", "chair"] as const;
 
 export function ApplicationDetail({
   application,
@@ -51,17 +53,10 @@ export function ApplicationDetail({
     application.status === "archived";
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-ink-muted">
-            Loan number
-          </p>
-          <h1 className="font-mono text-2xl font-semibold">
-            {application.queueNumber}
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
+    <div>
+      <header className="flex flex-wrap items-center justify-between gap-x-8 gap-y-5">
+        <QueueStub queueNumber={application.queueNumber} size="lg" />
+        <div className="flex flex-wrap items-center gap-4">
           <StatusBadge status={application.status} outcome={application.outcome} />
           {canPrint && (
             <a
@@ -70,96 +65,130 @@ export function ApplicationDetail({
               rel="noopener noreferrer"
               className="btn-secondary"
             >
-              Print form
+              Open printable form
             </a>
           )}
         </div>
-      </div>
+      </header>
 
-      <section className="card p-6">
-        <h2 className="mb-4 font-serif text-lg font-semibold">Application</h2>
-        <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-          <Field label="Borrower" value={application.borrowerName} />
-          <Field label="Co-maker" value={application.coMakerName} />
-          <Field
+      <hr className="mt-6 border-rule-strong" />
+
+      {/* Terms, set as a ruled grid — the way the paper form reads. */}
+      <section className="mt-7">
+        <span className="eyebrow">Terms</span>
+        <dl className="mt-3 grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4">
+          <Cell label="Borrower" value={application.borrowerName} />
+          <Cell label="Co-maker" value={application.coMakerName} />
+          <Cell
             label="Loan type"
             value={application.loanType === "regular" ? "Regular" : "Emergency"}
           />
-          <Field label="Loan amount" value={formatPeso(application.loanAmount)} />
-          <Field
-            label="Deduction per payday"
-            value={`${formatPeso(application.deductionPerPayday)} × 10 payments`}
+          <Cell label="Filed" value={formatDate(application.dateFiled)} />
+          <Cell label="Amount" value={formatPeso(application.loanAmount)} mono />
+          <Cell
+            label="Per payday"
+            value={formatPeso(application.deductionPerPayday)}
+            mono
           />
-          <Field label="Term" value={`${application.termMonths} months`} />
-          <Field label="Date filed" value={formatDate(application.dateFiled)} />
-          <Field
-            label="Effective date"
+          <Cell
+            label="Term"
+            value={`${application.termMonths} months · 10 paydays`}
+          />
+          <Cell
+            label="Effective"
             value={
               application.startDate === undefined
-                ? "Set once the chair approves"
+                ? "On the chair's approval"
                 : formatDate(application.startDate)
             }
+            muted={application.startDate === undefined}
           />
           {application.releasedAt !== undefined && (
             <>
-              <Field
-                label="Released on"
-                value={formatDate(application.releasedAt)}
-              />
-              <Field
+              <Cell label="Released" value={formatDate(application.releasedAt)} />
+              <Cell
                 label="Amount released"
                 value={formatPeso(application.releasedAmount ?? 0)}
+                mono
               />
             </>
           )}
         </dl>
       </section>
 
-      <section className="card p-6">
-        <h2 className="mb-4 font-serif text-lg font-semibold">Approvals</h2>
-        <ol className="space-y-3">
-          {APPROVAL_SEQUENCE.map((role) => {
+      <section className="mt-9">
+        <span className="eyebrow">Decisions</span>
+        <ol className="mt-3">
+          {CHAIN.map((role, index) => {
             const decision = application.decisions.find(
               (d) => d.approverRole === role,
             );
+            const last = index === CHAIN.length - 1;
+            const rejected = decision?.decision === "rejected";
+
             return (
-              <li
-                key={role}
-                className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-stone-200 px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium">{roleTitle(role)}</p>
+              <li key={role} className="flex gap-4">
+                {/* The rail: a mark on a line, connected until the last stop. */}
+                <div
+                  className="flex flex-col items-center"
+                  aria-hidden="true"
+                >
+                  <span
+                    className={`mt-1.5 h-2.5 w-2.5 shrink-0 rotate-45 border ${
+                      decision === undefined
+                        ? "border-rule-strong bg-leaf"
+                        : rejected
+                          ? "border-oxide bg-oxide"
+                          : "border-viridian bg-viridian"
+                    }`}
+                  />
+                  {!last && (
+                    <span
+                      className={`w-px flex-1 ${
+                        decision === undefined ? "bg-rule" : "bg-viridian/35"
+                      }`}
+                    />
+                  )}
+                </div>
+
+                <div className={last ? "pb-0" : "pb-7"}>
+                  <p className="text-sm font-medium leading-tight">
+                    {roleTitle(role)}
+                  </p>
+
                   {decision === undefined ? (
-                    <p className="mt-0.5 text-sm text-ink-muted">Awaiting decision</p>
+                    <p className="mt-1 text-sm text-ink-faint">
+                      {isNext(application, role)
+                        ? "Awaiting decision"
+                        : "Not yet reached"}
+                    </p>
                   ) : (
                     <>
-                      <p className="mt-0.5 text-sm text-ink-muted">
-                        {decision.approverName} ·{" "}
-                        {formatDateTime(decision.decidedAt)}
+                      <p className="mt-1 text-sm text-ink-pencil">
+                        <span
+                          className={
+                            rejected
+                              ? "font-medium text-oxide"
+                              : "font-medium text-viridian"
+                          }
+                        >
+                          {rejected ? "Disapproved" : "Approved"}
+                        </span>
+                        {" by "}
+                        {decision.approverName}
+                        <span className="text-ink-faint">
+                          {" · "}
+                          {formatDateTime(decision.decidedAt)}
+                        </span>
                       </p>
                       {decision.remarks && (
-                        <p className="mt-1 text-sm italic text-ink-muted">
-                          “{decision.remarks}”
+                        <p className="mt-2 border-l-2 border-rule-strong pl-3 font-display text-sm italic leading-relaxed text-ink-pencil">
+                          {decision.remarks}
                         </p>
                       )}
                     </>
                   )}
                 </div>
-                <span
-                  className={`badge ${
-                    decision === undefined
-                      ? "bg-stone-100 text-stone-600"
-                      : decision.decision === "approved"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {decision === undefined
-                    ? "Pending"
-                    : decision.decision === "approved"
-                      ? "Approved"
-                      : "Disapproved"}
-                </span>
               </li>
             );
           })}
@@ -171,11 +200,36 @@ export function ApplicationDetail({
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+/** True when this role is the one currently holding the application. */
+function isNext(application: DetailApplication, role: string): boolean {
+  if (application.status === "pending") {
+    return role === "committee1" || role === "committee2";
+  }
+  if (application.status === "chair_review") return role === "chair";
+  return false;
+}
+
+function Cell({
+  label,
+  value,
+  mono = false,
+  muted = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  muted?: boolean;
+}) {
   return (
-    <div>
-      <dt className="text-xs uppercase tracking-wide text-ink-muted">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium">{value}</dd>
+    <div className="bg-leaf px-4 py-3">
+      <dt className="eyebrow">{label}</dt>
+      <dd
+        className={`mt-1.5 text-sm ${mono ? "tnum font-mono" : ""} ${
+          muted ? "text-ink-faint" : "text-ink"
+        }`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

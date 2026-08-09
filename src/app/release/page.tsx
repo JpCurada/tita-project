@@ -4,32 +4,36 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { QueueStub } from "@/components/QueueStub";
 import { errorMessage, formatPeso, toDateInputValue } from "@/lib/format";
 
 export default function ReleasePage() {
   const queue = useQuery(api.applications.listQueue);
 
   if (queue === undefined) {
-    return <p className="text-sm text-ink-muted">Loading…</p>;
+    return <p className="eyebrow">Loading</p>;
   }
 
-  const readyForRelease = queue.filter((app) => app.status === "approved");
+  const ready = queue.filter((app) => app.status === "approved");
 
   return (
-    <div>
-      <h1 className="font-serif text-2xl font-semibold">Release loans</h1>
-      <p className="mt-1 text-sm text-ink-muted">
-        Approved loans awaiting release. Recording a release files the
+    <div className="max-w-3xl">
+      <span className="eyebrow">Treasurer</span>
+      <h1 className="page-title mt-1.5">Release</h1>
+      <p className="mt-2 max-w-lg font-display text-[0.9375rem] leading-relaxed text-ink-pencil">
+        Approved loans waiting to be paid out. Recording a release files the
         application into the archive.
       </p>
 
-      {readyForRelease.length === 0 ? (
-        <p className="card mt-6 p-6 text-sm text-ink-muted">
-          No approved loans are awaiting release.
+      <hr className="mt-6 border-rule-strong" />
+
+      {ready.length === 0 ? (
+        <p className="mt-8 border border-dashed border-rule-strong px-5 py-12 text-center text-sm text-ink-pencil">
+          No approved loans are waiting for release.
         </p>
       ) : (
-        <ul className="mt-6 space-y-4">
-          {readyForRelease.map((app) => (
+        <ul className="mt-8 space-y-5">
+          {ready.map((app) => (
             <ReleaseCard
               key={app._id}
               applicationId={app._id as Id<"applications">}
@@ -66,13 +70,12 @@ function ReleaseCard({
     setError(null);
     setSaving(true);
     try {
-      // Midday avoids the released date sliding a day either way when the
+      // Midday keeps the released date from sliding a day either way when the
       // stored instant is read back in another timezone.
-      const releasedAt = new Date(`${date}T12:00:00+08:00`).getTime();
       await recordRelease({
         applicationId,
         releasedAmount: Number(amount),
-        releasedAt,
+        releasedAt: new Date(`${date}T12:00:00+08:00`).getTime(),
       });
     } catch (caught) {
       setError(errorMessage(caught));
@@ -81,18 +84,18 @@ function ReleaseCard({
   }
 
   return (
-    <li className="card p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="font-mono text-sm font-semibold">{queueNumber}</p>
-        <p className="text-sm text-ink-muted">
-          Approved for {formatPeso(loanAmount)}
-        </p>
+    <li className="leaf p-5">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <QueueStub queueNumber={queueNumber} />
+        <span className="flex-1 text-sm font-medium">{borrowerName}</span>
+        <span className="tnum font-mono text-sm text-ink-pencil">
+          approved for {formatPeso(loanAmount)}
+        </span>
       </div>
-      <p className="mt-1 text-sm">{borrowerName}</p>
 
       <form
         onSubmit={handleRelease}
-        className="mt-4 flex flex-wrap items-end gap-3 border-t border-stone-200 pt-4"
+        className="mt-5 flex flex-wrap items-end gap-x-7 gap-y-4 border-t border-rule pt-5"
       >
         <div className="w-40">
           <label className="label" htmlFor={`amount-${applicationId}`}>
@@ -104,12 +107,12 @@ function ReleaseCard({
             min="1"
             step="0.01"
             required
-            className="input"
+            className="input tnum font-mono"
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
           />
         </div>
-        <div className="w-48">
+        <div className="w-44">
           <label className="label" htmlFor={`date-${applicationId}`}>
             Date released
           </label>
@@ -117,18 +120,21 @@ function ReleaseCard({
             id={`date-${applicationId}`}
             type="date"
             required
-            className="input"
+            className="input tnum font-mono"
             value={date}
             onChange={(event) => setDate(event.target.value)}
           />
         </div>
         <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? "Recording…" : "Record release"}
+          {saving ? "Recording" : "Record release"}
         </button>
       </form>
 
       {error !== null && (
-        <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+        <p
+          role="alert"
+          className="mt-4 border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
+        >
           {error}
         </p>
       )}

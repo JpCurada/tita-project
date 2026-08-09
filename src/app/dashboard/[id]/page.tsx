@@ -14,16 +14,13 @@ export default function MyApplicationPage() {
   });
 
   if (application === undefined) {
-    return <p className="text-sm text-ink-muted">Loading…</p>;
+    return <p className="eyebrow">Loading</p>;
   }
 
   return (
     <div>
-      <Link
-        href="/dashboard"
-        className="mb-6 inline-block text-sm text-ink-muted hover:text-ink"
-      >
-        ← Back to my loans
+      <Link href="/dashboard" className="btn-quiet mb-7 inline-block">
+        Back to my loans
       </Link>
       <ApplicationDetail application={application} />
     </div>

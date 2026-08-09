@@ -2,47 +2,160 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-}
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
 
-body {
-  @apply bg-stone-50 text-ink antialiased;
+  body {
+    @apply bg-bond text-ink antialiased;
+    /* Faint laid-paper tooth. Invisible until you look for it. */
+    background-image: repeating-linear-gradient(
+      180deg,
+      transparent 0 27px,
+      rgba(23, 22, 20, 0.016) 27px 28px
+    );
+  }
+
+  /* Numbers are data: line them up. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-viridian ring-offset-2 ring-offset-bond;
+  }
+
+  ::selection {
+    background: #1d4e4a;
+    color: #fbfaf6;
+  }
 }
 
 @layer components {
-  .card {
-    @apply rounded-lg border border-stone-200 bg-white shadow-sm;
+  /* ---- Surfaces ------------------------------------------------------ */
+
+  /* A leaf of paper. Square corners, hairline rule, no floaty shadow. */
+  .leaf {
+    @apply border border-rule bg-leaf shadow-leaf;
   }
+
+  /* ---- Typography ---------------------------------------------------- */
+
+  /* Eyebrow: the printed caption under a rule on a form. */
+  .eyebrow {
+    @apply text-micro font-medium uppercase tracking-[0.14em] text-ink-faint;
+  }
+
+  .page-title {
+    @apply font-display text-[1.75rem] font-medium leading-tight tracking-[-0.01em];
+  }
+
+  .section-title {
+    @apply font-display text-lg font-medium leading-snug;
+  }
+
+  /* ---- Controls ------------------------------------------------------ */
 
   .label {
-    @apply mb-1.5 block text-sm font-medium text-ink;
+    @apply mb-1.5 block text-micro font-medium uppercase tracking-[0.1em] text-ink-pencil;
   }
 
+  /* Underline, not a box: a field ruled on a form. */
   .input {
-    @apply w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm
-           outline-none transition focus:border-stone-900 focus:ring-1 focus:ring-stone-900
-           disabled:cursor-not-allowed disabled:bg-stone-100;
+    @apply w-full rounded-none border-0 border-b border-rule-strong bg-transparent px-0 py-2
+           text-sm text-ink transition-colors
+           placeholder:text-ink-faint
+           focus:border-viridian focus:outline-none focus:ring-0
+           disabled:cursor-not-allowed disabled:text-ink-faint;
+  }
+
+  select.input {
+    @apply -ml-0.5 pl-0.5;
+  }
+
+  textarea.input {
+    @apply border border-rule-strong px-3 py-2 focus:border-viridian;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2
-           text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-sm
+           px-4 py-2 text-sm font-medium transition-colors
+           disabled:cursor-not-allowed disabled:opacity-45;
   }
 
   .btn-primary {
-    @apply btn bg-stone-900 text-white hover:bg-stone-700;
+    @apply btn bg-ink text-leaf hover:bg-viridian;
   }
 
   .btn-secondary {
-    @apply btn border border-stone-300 bg-white text-ink hover:bg-stone-100;
+    @apply btn border border-rule-strong bg-transparent text-ink hover:border-ink hover:bg-black/[0.03];
   }
 
   .btn-danger {
-    @apply btn bg-red-700 text-white hover:bg-red-800;
+    @apply btn border border-oxide/40 bg-transparent text-oxide hover:bg-oxide hover:text-leaf;
   }
 
-  .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  .btn-quiet {
+    @apply -mx-1 rounded-sm px-1 text-sm text-ink-pencil underline decoration-rule-strong
+           underline-offset-4 transition-colors hover:text-ink hover:decoration-ink;
+  }
+
+  /* ---- Status ---------------------------------------------------------
+     A stamped mark, not a pill: square, ruled, letterspaced. */
+  .stamp {
+    @apply inline-flex items-center gap-1.5 border px-2 py-[3px]
+           text-micro font-medium uppercase tracking-[0.1em];
+  }
+
+  /* ---- Ledger table -------------------------------------------------- */
+
+  .ledger {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .ledger thead th {
+    @apply border-b border-rule-strong px-4 py-2 text-left text-micro font-medium
+           uppercase tracking-[0.1em] text-ink-faint;
+  }
+
+  .ledger tbody td {
+    @apply border-b border-rule px-4 py-3 align-middle;
+  }
+
+  .ledger tbody tr:last-child td {
+    @apply border-b-0;
+  }
+}
+
+@layer utilities {
+  /* The stub's torn edge. Colour comes from `text-*` on the element. */
+  .perforated-r {
+    -webkit-mask-image: radial-gradient(
+      circle at right 0 top 4px,
+      transparent 0 3px,
+      #000 3.2px
+    );
+    mask-image: radial-gradient(
+      circle at right 0 top 4px,
+      transparent 0 3px,
+      #000 3.2px
+    );
+    -webkit-mask-size: 100% 9px;
+    mask-size: 100% 9px;
+    -webkit-mask-repeat: repeat-y;
+    mask-repeat: repeat-y;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

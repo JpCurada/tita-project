@@ -27,25 +27,25 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [member, claimProfile]);
 
+  const leave = () => void signOut().then(() => router.push("/signin"));
+
   if (member === undefined) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-ink-muted">
-        Loading…
+      <div className="flex min-h-screen items-center justify-center">
+        <span className="eyebrow">Loading</span>
       </div>
     );
   }
 
   if (member === null) {
-    return <PendingApproval onSignOut={() => void signOut().then(() => router.push("/signin"))} />;
+    return <NotLinked onSignOut={leave} />;
   }
 
   const isStaff = STAFF_ROLES.includes(member.role);
   const isChair = member.role === "chair";
   const canRelease = member.role === "treasurer" || isChair;
 
-  const links: { href: string; label: string }[] = [
-    { href: "/dashboard", label: "My loans" },
-  ];
+  const links = [{ href: "/dashboard", label: "My loans" }];
   if (isStaff) {
     links.push({ href: "/queue", label: "Queue" });
     if (canRelease) links.push({ href: "/release", label: "Release" });
@@ -55,13 +55,35 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-stone-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <Link href="/dashboard" className="font-serif text-lg font-semibold">
-            PIT FA Loans
-          </Link>
+      <header className="border-b border-rule-strong bg-leaf">
+        <div className="mx-auto max-w-5xl px-5">
+          {/* Masthead: the association names itself, as it does on the form. */}
+          <div className="flex items-baseline justify-between gap-4 pt-4">
+            <Link href="/dashboard" className="group">
+              <span className="eyebrow block text-ink-faint">
+                Palompon Institute of Technology
+              </span>
+              <span className="font-display text-base font-medium tracking-[-0.01em] text-ink transition-colors group-hover:text-viridian">
+                Faculty Association
+                <span className="text-ink-faint"> · Loan Committee</span>
+              </span>
+            </Link>
 
-          <nav className="flex flex-1 flex-wrap gap-1">
+            <div className="flex items-baseline gap-4 text-right">
+              <span className="hidden sm:block">
+                <span className="block text-sm leading-tight">{member.name}</span>
+                <span className="eyebrow block text-ink-faint">
+                  {roleTitle(member.role)}
+                </span>
+              </span>
+              <button className="btn-quiet" onClick={leave}>
+                Sign out
+              </button>
+            </div>
+          </div>
+
+          {/* Tabs sit on the rule, like index tabs on a ledger. */}
+          <nav className="-mb-px flex gap-6 overflow-x-auto pt-4">
             {links.map((link) => {
               const active =
                 pathname === link.href || pathname.startsWith(`${link.href}/`);
@@ -70,10 +92,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   key={link.href}
                   href={link.href}
                   aria-current={active ? "page" : undefined}
-                  className={`rounded-md px-3 py-1.5 text-sm transition ${
+                  className={`whitespace-nowrap border-b-2 pb-2 text-sm transition-colors ${
                     active
-                      ? "bg-stone-900 text-white"
-                      : "text-ink-muted hover:bg-stone-100 hover:text-ink"
+                      ? "border-viridian font-medium text-ink"
+                      : "border-transparent text-ink-pencil hover:border-rule-strong hover:text-ink"
                   }`}
                 >
                   {link.label}
@@ -81,38 +103,24 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
-
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-right sm:block">
-              <span className="block font-medium leading-tight">{member.name}</span>
-              <span className="block text-xs text-ink-muted">
-                {roleTitle(member.role)}
-              </span>
-            </span>
-            <button
-              className="btn-secondary"
-              onClick={() => void signOut().then(() => router.push("/signin"))}
-            >
-              Sign out
-            </button>
-          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-5xl px-5 py-9">{children}</main>
     </div>
   );
 }
 
-function PendingApproval({ onSignOut }: { onSignOut: () => void }) {
+function NotLinked({ onSignOut }: { onSignOut: () => void }) {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="card max-w-md p-8 text-center">
-        <h1 className="font-serif text-xl font-semibold">Account not yet linked</h1>
-        <p className="mt-3 text-sm text-ink-muted">
-          Your sign-in works, but no faculty association membership is linked to
-          this email address yet. Ask the Chair of the Loan Committee to add you,
-          then sign in again.
+    <main className="flex min-h-screen items-center justify-center px-5">
+      <div className="leaf max-w-md p-8">
+        <span className="eyebrow">Membership</span>
+        <h1 className="section-title mt-2">This account is not on the roll yet</h1>
+        <p className="mt-3 text-sm leading-relaxed text-ink-pencil">
+          Your sign-in works. No faculty association membership is linked to this
+          email address, so there is nothing to show you yet. Ask the Chair of
+          the Loan Committee to add you, then sign in again.
         </p>
         <button className="btn-secondary mt-6" onClick={onSignOut}>
           Sign out

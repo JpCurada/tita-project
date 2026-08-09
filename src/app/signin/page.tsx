@@ -21,104 +21,149 @@ export default function SignInPage() {
     formData.set("flow", flow);
     // Emails are stored lower-cased so a profile pre-created by the chair
     // matches regardless of how it is typed at sign-up.
-    const email = String(formData.get("email") ?? "").trim().toLowerCase();
-    formData.set("email", email);
+    formData.set(
+      "email",
+      String(formData.get("email") ?? "").trim().toLowerCase(),
+    );
 
     try {
       await signIn("password", formData);
       router.push("/dashboard");
     } catch (caught) {
       setError(
-        flow === "signIn"
-          ? "Incorrect email or password."
-          : errorMessage(caught),
+        flow === "signIn" ? "That email and password do not match." : errorMessage(caught),
       );
       setSubmitting(false);
     }
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <header className="mb-8 text-center">
-          <p className="text-xs uppercase tracking-widest text-ink-muted">
-            PIT – Faculty Association
-          </p>
-          <h1 className="mt-2 font-serif text-2xl font-semibold">
-            Loan Application System
-          </h1>
-        </header>
+    <main className="mx-auto grid min-h-screen max-w-5xl items-center gap-12 px-5 py-12 lg:grid-cols-[1.05fr_minmax(0,380px)]">
+      {/* Thesis: the form this replaces, quoted in its own words. */}
+      <section className="hidden lg:block">
+        <span className="eyebrow">Republic of the Philippines</span>
+        <h1 className="page-title mt-3 text-[2.5rem] leading-[1.1]">
+          Palompon Institute of Technology
+          <span className="mt-1 block font-normal italic text-ink-pencil">
+            Faculty Association
+          </span>
+        </h1>
 
-        <form onSubmit={handleSubmit} className="card space-y-4 p-6">
-          <div>
-            <label className="label" htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              className="input"
-              placeholder="you@pit.edu.ph"
-            />
-          </div>
+        <hr className="my-8 border-rule-strong" />
 
-          <div>
-            <label className="label" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete={
-                flow === "signIn" ? "current-password" : "new-password"
-              }
-              required
-              minLength={8}
-              className="input"
-            />
-            {flow === "signUp" && (
-              <p className="mt-1.5 text-xs text-ink-muted">
-                At least 8 characters.
+        <p className="max-w-md font-display text-[1.0625rem] leading-relaxed text-ink-pencil">
+          <span className="text-ink">
+            “I hereby apply for a REGULAR/EMERGENCY loan
+          </span>{" "}
+          in the amount of{" "}
+          <span className="tnum border-b border-rule-strong px-1 font-mono text-[0.9375rem] text-ink">
+            PHP 12,000.00
+          </span>{" "}
+          payable within five (5) months to be deducted every quincena in the
+          amount of{" "}
+          <span className="tnum border-b border-rule-strong px-1 font-mono text-[0.9375rem] text-ink">
+            PHP 1,200.00
+          </span>
+          .”
+        </p>
+
+        <dl className="mt-10 grid max-w-md grid-cols-3 gap-px border border-rule bg-rule">
+          {[
+            ["Filed", "Queue number issued at once"],
+            ["Reviewed", "Two members, then the chair"],
+            ["Released", "Recorded and archived"],
+          ].map(([term, detail]) => (
+            <div key={term} className="bg-leaf px-3 py-3">
+              <dt className="eyebrow text-viridian">{term}</dt>
+              <dd className="mt-1.5 text-xs leading-snug text-ink-pencil">
+                {detail}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section className="w-full">
+        <div className="leaf p-7">
+          <span className="eyebrow">
+            {flow === "signIn" ? "Members and committee" : "New account"}
+          </span>
+          <h2 className="section-title mt-1.5">
+            {flow === "signIn" ? "Sign in" : "Create your account"}
+          </h2>
+
+          <form onSubmit={handleSubmit} className="mt-7 space-y-6">
+            <div>
+              <label className="label" htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="input"
+                placeholder="you@pit.edu.ph"
+              />
+            </div>
+
+            <div>
+              <label className="label" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete={
+                  flow === "signIn" ? "current-password" : "new-password"
+                }
+                required
+                minLength={8}
+                className="input"
+              />
+              {flow === "signUp" && (
+                <p className="mt-2 text-xs text-ink-faint">
+                  At least 8 characters. Use the email address the chair
+                  registered for you.
+                </p>
+              )}
+            </div>
+
+            {error !== null && (
+              <p
+                role="alert"
+                className="border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
+              >
+                {error}
               </p>
             )}
-          </div>
 
-          {error !== null && (
-            <p
-              role="alert"
-              className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800"
-            >
-              {error}
-            </p>
-          )}
-
-          <button type="submit" disabled={submitting} className="btn-primary w-full">
-            {submitting
-              ? "Please wait…"
-              : flow === "signIn"
-                ? "Sign in"
-                : "Create account"}
-          </button>
-
-          <p className="text-center text-sm text-ink-muted">
-            {flow === "signIn" ? "No account yet?" : "Already registered?"}{" "}
-            <button
-              type="button"
-              className="font-medium text-ink underline underline-offset-2"
-              onClick={() => {
-                setFlow(flow === "signIn" ? "signUp" : "signIn");
-                setError(null);
-              }}
-            >
-              {flow === "signIn" ? "Create one" : "Sign in"}
+            <button type="submit" disabled={submitting} className="btn-primary w-full">
+              {submitting
+                ? "Working"
+                : flow === "signIn"
+                  ? "Sign in"
+                  : "Create account"}
             </button>
-          </p>
-        </form>
-      </div>
+          </form>
+        </div>
+
+        <p className="mt-5 text-center text-sm text-ink-pencil">
+          {flow === "signIn" ? "No account yet?" : "Already registered?"}{" "}
+          <button
+            type="button"
+            className="btn-quiet"
+            onClick={() => {
+              setFlow(flow === "signIn" ? "signUp" : "signIn");
+              setError(null);
+            }}
+          >
+            {flow === "signIn" ? "Create one" : "Sign in"}
+          </button>
+        </p>
+      </section>
     </main>
   );
 }

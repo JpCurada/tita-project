@@ -20,9 +20,12 @@ export default function ReviewPage() {
   const [remarks, setRemarks] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<"approved" | "rejected" | null>(null);
+  const [confirming, setConfirming] = useState<"approved" | "rejected" | null>(
+    null,
+  );
 
   if (application === undefined || member === undefined) {
-    return <p className="text-sm text-ink-muted">Loading…</p>;
+    return <p className="eyebrow">Loading</p>;
   }
   if (member === null) return null;
 
@@ -49,6 +52,7 @@ export default function ReviewPage() {
         remarks: remarks.trim() === "" ? undefined : remarks.trim(),
       });
       setRemarks("");
+      setConfirming(null);
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -58,67 +62,109 @@ export default function ReviewPage() {
 
   return (
     <div>
-      <Link
-        href="/queue"
-        className="mb-6 inline-block text-sm text-ink-muted hover:text-ink"
-      >
-        ← Back to queue
+      <Link href="/queue" className="btn-quiet mb-7 inline-block">
+        Back to queue
       </Link>
 
       <ApplicationDetail application={application}>
         {isApprover && (
-          <section className="card p-6">
-            <h2 className="font-serif text-lg font-semibold">
-              Your decision as {roleTitle(member.role)}
-            </h2>
+          <section className="mt-9 border-t-2 border-ink pt-6">
+            <span className="eyebrow">Your decision</span>
+            <h2 className="section-title mt-1.5">{roleTitle(member.role)}</h2>
 
             {canDecide ? (
-              <div className="mt-4 space-y-4">
+              <div className="mt-5 max-w-xl space-y-5">
                 <div>
                   <label className="label" htmlFor="remarks">
-                    Remarks <span className="font-normal text-ink-muted">(optional)</span>
+                    Remarks — optional, recorded permanently
                   </label>
                   <textarea
                     id="remarks"
                     className="input min-h-20 resize-y"
                     value={remarks}
                     onChange={(event) => setRemarks(event.target.value)}
-                    placeholder="Any note to record with your decision"
+                    placeholder="A note to accompany your decision"
                   />
                 </div>
 
                 {error !== null && (
                   <p
                     role="alert"
-                    className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800"
+                    className="border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
                   >
                     {error}
                   </p>
                 )}
 
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    className="btn-primary"
-                    disabled={pending !== null}
-                    onClick={() => void decide("approved")}
+                {confirming === null ? (
+                  <div className="flex flex-wrap items-center gap-4">
+                    <button
+                      className="btn-primary"
+                      onClick={() => setConfirming("approved")}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="btn-danger"
+                      onClick={() => setConfirming("rejected")}
+                    >
+                      Disapprove
+                    </button>
+                    <p className="text-xs text-ink-faint">
+                      A decision is final and cannot be changed.
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    className={`border-l-2 p-4 ${
+                      confirming === "rejected"
+                        ? "border-oxide bg-oxide-wash"
+                        : "border-viridian bg-viridian-wash"
+                    }`}
                   >
-                    {pending === "approved" ? "Recording…" : "Approve"}
-                  </button>
-                  <button
-                    className="btn-danger"
-                    disabled={pending !== null}
-                    onClick={() => void decide("rejected")}
-                  >
-                    {pending === "rejected" ? "Recording…" : "Disapprove"}
-                  </button>
-                </div>
-                <p className="text-xs text-ink-muted">
-                  A decision is final and cannot be changed. Disapproving ends
-                  the application immediately.
-                </p>
+                    <p className="text-sm leading-relaxed text-ink">
+                      {confirming === "rejected" ? (
+                        <>
+                          Disapprove loan {application.queueNumber} for{" "}
+                          {application.borrowerName}? This ends the application
+                          immediately — the remaining approvers will not be
+                          asked.
+                        </>
+                      ) : (
+                        <>
+                          Approve loan {application.queueNumber} for{" "}
+                          {application.borrowerName}? Your name is recorded
+                          against this decision.
+                        </>
+                      )}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center gap-4">
+                      <button
+                        className={
+                          confirming === "rejected" ? "btn-danger" : "btn-primary"
+                        }
+                        disabled={pending !== null}
+                        onClick={() => void decide(confirming)}
+                      >
+                        {pending !== null
+                          ? "Recording"
+                          : confirming === "rejected"
+                            ? "Yes, disapprove"
+                            : "Yes, approve"}
+                      </button>
+                      <button
+                        className="btn-quiet"
+                        disabled={pending !== null}
+                        onClick={() => setConfirming(null)}
+                      >
+                        Go back
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <p className="mt-3 text-sm text-ink-muted">
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-pencil">
                 {alreadyVoted
                   ? "You have already recorded your decision on this application."
                   : member.role === "chair"
@@ -130,11 +176,12 @@ export default function ReviewPage() {
         )}
 
         {member.role === "treasurer" && application.status === "approved" && (
-          <section className="card p-6">
-            <p className="text-sm text-ink-muted">
+          <section className="mt-9 border-t-2 border-ink pt-6">
+            <span className="eyebrow">Treasurer</span>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-pencil">
               This loan is approved and ready for release. Record it on the{" "}
-              <Link href="/release" className="font-medium text-ink underline">
-                Release
+              <Link href="/release" className="btn-quiet">
+                release
               </Link>{" "}
               screen.
             </p>

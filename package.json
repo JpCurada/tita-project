@@ -25,8 +25,13 @@
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
     "autoprefixer": "^10.4.20",
+    "playwright": "^1.55.0",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3"
+  },
+  "// overrides": "@convex-dev/auth 0.0.87 requires @auth/core 0.37.x. `npm audit fix --force` upgrades it to 0.41.x and breaks sign-in. Pinned here so a forced fix cannot change it. The advisories are OAuth-only paths; this app uses the Password provider. See README.",
+  "overrides": {
+    "@auth/core": "0.37.0"
   }
 }

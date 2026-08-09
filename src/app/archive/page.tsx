@@ -9,6 +9,12 @@ import { formatDate, formatPeso } from "@/lib/format";
 
 type Filter = "all" | "approved" | "rejected";
 
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Disapproved" },
+];
+
 export default function ArchivePage() {
   const archive = useQuery(api.applications.listArchive);
   const [filter, setFilter] = useState<Filter>("all");
@@ -30,84 +36,102 @@ export default function ArchivePage() {
 
   return (
     <div>
-      <h1 className="font-serif text-2xl font-semibold">Archive</h1>
-      <p className="mt-1 text-sm text-ink-muted">
-        Completed applications, read-only. Approved and disapproved alike.
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span className="eyebrow">Closed record</span>
+          <h1 className="page-title mt-1.5">Archive</h1>
+        </div>
+        {archive !== undefined && (
+          <p className="tnum font-mono text-sm text-ink-pencil">
+            {visible.length}
+            {visible.length !== archive.length && ` of ${archive.length}`} loans
+          </p>
+        )}
+      </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          className="input max-w-xs"
-          placeholder="Search loan number or name…"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <div className="flex gap-1">
-          {(["all", "approved", "rejected"] as const).map((option) => (
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-b border-rule-strong pb-3">
+        <div className="flex gap-5">
+          {FILTERS.map((option) => (
             <button
-              key={option}
-              onClick={() => setFilter(option)}
-              className={`rounded-md px-3 py-1.5 text-sm capitalize transition ${
-                filter === option
-                  ? "bg-stone-900 text-white"
-                  : "text-ink-muted hover:bg-stone-100"
+              key={option.value}
+              onClick={() => setFilter(option.value)}
+              aria-pressed={filter === option.value}
+              className={`-mb-3 border-b-2 pb-3 text-sm transition-colors ${
+                filter === option.value
+                  ? "border-viridian font-medium text-ink"
+                  : "border-transparent text-ink-pencil hover:text-ink"
               }`}
             >
-              {option === "rejected" ? "disapproved" : option}
+              {option.label}
             </button>
           ))}
         </div>
+
+        <input
+          type="search"
+          className="input max-w-56 border-b-0 py-1"
+          placeholder="Search number or name"
+          aria-label="Search the archive"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
       </div>
 
       {archive === undefined ? (
-        <p className="mt-6 text-sm text-ink-muted">Loading…</p>
+        <p className="eyebrow mt-8">Loading</p>
       ) : visible.length === 0 ? (
-        <p className="card mt-6 p-6 text-sm text-ink-muted">
+        <p className="mt-8 border border-dashed border-rule-strong px-5 py-12 text-center text-sm text-ink-pencil">
           {archive.length === 0
             ? "Nothing has been archived yet."
-            : "No applications match your search."}
+            : "No loans match that search."}
         </p>
       ) : (
-        <div className="card mt-6 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-stone-200 text-xs uppercase tracking-wide text-ink-muted">
+        <div className="mt-6 overflow-x-auto">
+          <table className="ledger">
+            <caption className="sr-only">
+              Archived loan applications, most recent first
+            </caption>
+            <thead>
               <tr>
-                <th className="px-5 py-3 font-medium">Loan no.</th>
-                <th className="px-5 py-3 font-medium">Borrower</th>
-                <th className="px-5 py-3 font-medium">Amount</th>
-                <th className="px-5 py-3 font-medium">Filed</th>
-                <th className="px-5 py-3 font-medium">Result</th>
-                <th className="px-5 py-3 font-medium">Form</th>
+                <th scope="col">Loan no.</th>
+                <th scope="col">Borrower</th>
+                <th scope="col" className="text-right">
+                  Amount
+                </th>
+                <th scope="col">Filed</th>
+                <th scope="col">Result</th>
+                <th scope="col">
+                  <span className="sr-only">Printable form</span>
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
+            <tbody>
               {visible.map((app) => (
-                <tr key={app._id} className="hover:bg-stone-50">
-                  <td className="px-5 py-3">
+                <tr key={app._id} className="transition-colors hover:bg-black/[0.02]">
+                  <td>
                     <Link
                       href={`/queue/${app._id}`}
-                      className="font-mono font-medium underline-offset-2 hover:underline"
+                      className="tnum font-mono text-sm font-medium underline decoration-rule-strong underline-offset-4 transition-colors hover:decoration-ink"
                     >
                       {app.queueNumber}
                     </Link>
                   </td>
-                  <td className="px-5 py-3">{app.borrowerName}</td>
-                  <td className="px-5 py-3">{formatPeso(app.loanAmount)}</td>
-                  <td className="px-5 py-3 text-ink-muted">
-                    {formatDate(app.dateFiled)}
+                  <td>{app.borrowerName}</td>
+                  <td className="tnum text-right font-mono">
+                    {formatPeso(app.loanAmount)}
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="text-ink-pencil">{formatDate(app.dateFiled)}</td>
+                  <td>
                     <StatusBadge status={app.status} outcome={app.outcome} />
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="text-right">
                     <a
                       href={`/api/applications/${app._id}/pdf`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-ink-muted underline-offset-2 hover:text-ink hover:underline"
+                      className="btn-quiet"
                     >
-                      PDF
+                      Form
                     </a>
                   </td>
                 </tr>

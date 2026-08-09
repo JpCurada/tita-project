@@ -3,73 +3,117 @@
 import { useQuery } from "convex/react";
 import Link from "next/link";
 import { api } from "@convex/_generated/api";
+import { QueueStub } from "@/components/QueueStub";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, formatPeso } from "@/lib/format";
 
 export default function DashboardPage() {
   const applications = useQuery(api.applications.listMine);
-
-  const hasOpenLoan =
-    applications?.some((app) => app.status !== "archived") ?? false;
+  const open = applications?.find((app) => app.status !== "archived");
+  const past = applications?.filter((app) => app.status === "archived") ?? [];
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl font-semibold">My loan applications</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Your queue number is issued the moment you file.
-          </p>
+          <span className="eyebrow">Your record</span>
+          <h1 className="page-title mt-1.5">Loans</h1>
         </div>
-        {!hasOpenLoan && (
+        {applications !== undefined && open === undefined && (
           <Link href="/apply" className="btn-primary">
-            File a loan application
+            File an application
           </Link>
         )}
       </div>
 
+      <hr className="mt-5 border-rule-strong" />
+
       {applications === undefined ? (
-        <p className="text-sm text-ink-muted">Loading…</p>
+        <p className="eyebrow mt-8">Loading</p>
       ) : applications.length === 0 ? (
-        <div className="card p-10 text-center">
-          <p className="text-sm text-ink-muted">
-            You have not filed any loan application yet.
+        <div className="mt-8 border border-dashed border-rule-strong px-6 py-14 text-center">
+          <p className="font-display text-lg text-ink">Nothing on file yet</p>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-ink-pencil">
+            When you file an application, your loan number is issued
+            immediately and you can follow each decision here.
           </p>
-          <Link href="/apply" className="btn-primary mt-4">
-            File your first application
+          <Link href="/apply" className="btn-primary mt-6">
+            File an application
           </Link>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {applications.map((app) => (
-            <li key={app._id}>
+        <>
+          {open !== undefined && (
+            <section className="mt-8">
+              <span className="eyebrow text-viridian">In progress</span>
               <Link
-                href={`/dashboard/${app._id}`}
-                className="card flex flex-wrap items-center justify-between gap-4 p-5 transition hover:border-stone-400"
+                href={`/dashboard/${open._id}`}
+                className="leaf mt-3 flex flex-wrap items-center gap-x-8 gap-y-5 p-5 transition-colors hover:border-rule-strong"
               >
-                <div>
-                  <p className="font-mono text-sm font-semibold">
-                    {app.queueNumber}
-                  </p>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {formatPeso(app.loanAmount)} ·{" "}
-                    {app.loanType === "regular" ? "Regular" : "Emergency"} · filed{" "}
-                    {formatDate(app.dateFiled)}
-                  </p>
-                </div>
-                <StatusBadge status={app.status} outcome={app.outcome} />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+                <QueueStub queueNumber={open.queueNumber} size="lg" tone="viridian" />
 
-      {hasOpenLoan && (
-        <p className="mt-6 text-sm text-ink-muted">
-          You may file a new application once your current one has been released
-          or rejected.
-        </p>
+                <dl className="flex flex-1 flex-wrap gap-x-10 gap-y-4">
+                  <Cell label="Amount" value={formatPeso(open.loanAmount)} mono />
+                  <Cell
+                    label="Per payday"
+                    value={formatPeso(open.deductionPerPayday)}
+                    mono
+                  />
+                  <Cell label="Filed" value={formatDate(open.dateFiled)} />
+                </dl>
+
+                <StatusBadge status={open.status} outcome={open.outcome} />
+              </Link>
+              <p className="mt-3 text-xs text-ink-faint">
+                You can file another application once this one is released or
+                declined.
+              </p>
+            </section>
+          )}
+
+          {past.length > 0 && (
+            <section className="mt-10">
+              <span className="eyebrow">Settled</span>
+              <ul className="mt-3 divide-y divide-rule border-y border-rule">
+                {past.map((app) => (
+                  <li key={app._id}>
+                    <Link
+                      href={`/dashboard/${app._id}`}
+                      className="flex flex-wrap items-center gap-x-6 gap-y-3 py-3.5 transition-colors hover:bg-black/[0.02]"
+                    >
+                      <QueueStub queueNumber={app.queueNumber} tone="muted" />
+                      <span className="tnum flex-1 font-mono text-sm">
+                        {formatPeso(app.loanAmount)}
+                      </span>
+                      <span className="text-sm text-ink-pencil">
+                        {formatDate(app.dateFiled)}
+                      </span>
+                      <StatusBadge status={app.status} outcome={app.outcome} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
       )}
+    </div>
+  );
+}
+
+function Cell({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div>
+      <dt className="eyebrow">{label}</dt>
+      <dd className={`mt-1 text-sm ${mono ? "tnum font-mono" : ""}`}>{value}</dd>
     </div>
   );
 }
