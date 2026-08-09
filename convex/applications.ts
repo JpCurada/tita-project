@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import {
   approverMutation,
@@ -7,6 +7,7 @@ import {
   memberQuery,
   staffQuery,
   treasurerMutation,
+  STAFF_ROLES,
 } from "./lib/auth";
 import { TERM_MONTHS, validateLoanTerms } from "./lib/loan";
 import { nextQueueNumber } from "./lib/queue";
@@ -304,14 +305,47 @@ export const eligibleCoMakers = memberQuery({
   },
 });
 
-/** Everything the PDF route needs, in one authorised read. */
-export async function loadForPrint(
-  ctx: QueryCtx,
-  applicationId: Id<"applications">,
-) {
-  const app = await ctx.db.get(applicationId);
-  if (app === null) {
-    throw new ConvexError("Application not found.");
-  }
-  return await withApprovals(ctx, app);
-}
+/**
+ * Everything the printable form needs, in one authorised read.
+ *
+ * Visible to the borrower and to staff, but only once a decision exists —
+ * there is no meaningful form to print before then. Called from the PDF route
+ * handler with the caller's own token, so the same rules apply there.
+ */
+export const getForPrint = memberQuery({
+  args: { applicationId: v.id("applications") },
+  handler: async (ctx, args) => {
+    const app = await ctx.db.get(args.applicationId);
+    if (app === null) {
+      throw new ConvexError("Application not found.");
+    }
+
+    const isOwner = app.memberId === ctx.member._id;
+    const isStaff = STAFF_ROLES.includes(ctx.member.role);
+    if (!isOwner && !isStaff) {
+      throw new ConvexError("Application not found.");
+    }
+    if (app.status === "pending" || app.status === "chair_review") {
+      throw new ConvexError(
+        "The form can be printed once the application has been decided.",
+      );
+    }
+
+    const detail = await withApprovals(ctx, app);
+    const releasedBy =
+      app.releasedByMemberId === undefined
+        ? null
+        : await ctx.db.get(app.releasedByMemberId);
+    const treasurer = await ctx.db
+      .query("members")
+      .withIndex("by_role", (q) => q.eq("role", "treasurer"))
+      .filter((q) => q.eq(q.field("active"), true))
+      .first();
+
+    return {
+      ...detail,
+      releasedByName: releasedBy === null ? null : fullName(releasedBy),
+      treasurerName: treasurer === null ? null : fullName(treasurer),
+    };
+  },
+});
