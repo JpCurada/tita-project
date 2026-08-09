@@ -128,6 +128,106 @@ export const create = chairMutation({
   },
 });
 
+/**
+ * Adds many members at once, from a pasted list.
+ *
+ * Rows are independent: a bad row is reported and skipped rather than failing
+ * the batch, so the chair can paste a whole roster, fix the few rows that were
+ * rejected, and paste again. Re-pasting is safe — rows that already exist are
+ * reported as duplicates, not inserted twice.
+ *
+ * Everyone imported this way is an ordinary borrower; committee seats are
+ * assigned afterwards on the Members screen, where the one-per-seat rule
+ * applies.
+ */
+export const createMany = chairMutation({
+  args: {
+    rows: v.array(
+      v.object({
+        employeeNo: v.string(),
+        firstName: v.string(),
+        middleName: v.optional(v.string()),
+        lastName: v.string(),
+        email: v.string(),
+        position: v.optional(v.string()),
+        isPermanent: v.boolean(),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const added: string[] = [];
+    const skipped: { row: number; name: string; reason: string }[] = [];
+
+    // Guards against duplicates inside the pasted batch itself, which the
+    // database cannot catch because none of them are committed yet.
+    const seenEmails = new Set<string>();
+    const seenEmployeeNos = new Set<string>();
+
+    for (const [index, row] of args.rows.entries()) {
+      const rowNumber = index + 1;
+      const email = row.email.trim().toLowerCase();
+      const employeeNo = row.employeeNo.trim();
+      const name = `${row.firstName.trim()} ${row.lastName.trim()}`.trim();
+
+      if (row.firstName.trim() === "" || row.lastName.trim() === "") {
+        skipped.push({ row: rowNumber, name: name || email, reason: "Missing name" });
+        continue;
+      }
+      if (!email.includes("@")) {
+        skipped.push({ row: rowNumber, name, reason: "Invalid email" });
+        continue;
+      }
+      if (employeeNo === "") {
+        skipped.push({ row: rowNumber, name, reason: "Missing employee number" });
+        continue;
+      }
+      if (seenEmails.has(email) || seenEmployeeNos.has(employeeNo)) {
+        skipped.push({ row: rowNumber, name, reason: "Repeated in this list" });
+        continue;
+      }
+
+      const byEmail = await ctx.db
+        .query("members")
+        .withIndex("by_email", (q) => q.eq("email", email))
+        .unique();
+      if (byEmail !== null) {
+        skipped.push({ row: rowNumber, name, reason: "Email already on the roll" });
+        continue;
+      }
+      const byEmployeeNo = await ctx.db
+        .query("members")
+        .withIndex("by_employeeNo", (q) => q.eq("employeeNo", employeeNo))
+        .unique();
+      if (byEmployeeNo !== null) {
+        skipped.push({
+          row: rowNumber,
+          name,
+          reason: "Employee number already on the roll",
+        });
+        continue;
+      }
+
+      await ctx.db.insert("members", {
+        employeeNo,
+        firstName: row.firstName.trim(),
+        middleName: row.middleName?.trim() || undefined,
+        lastName: row.lastName.trim(),
+        email,
+        position: row.position?.trim() || undefined,
+        isPermanent: row.isPermanent,
+        role: "member",
+        active: true,
+      });
+
+      seenEmails.add(email);
+      seenEmployeeNos.add(employeeNo);
+      added.push(name);
+    }
+
+    return { added, skipped };
+  },
+});
+
 export const setRole = chairMutation({
   args: { memberId: v.id("members"), role: roleValidator },
   handler: async (ctx, args) => {

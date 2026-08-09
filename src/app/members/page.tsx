@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { ImportMembers } from "@/components/ImportMembers";
 import { errorMessage, roleSeat } from "@/lib/format";
 
 const ROLES = ["member", "committee1", "committee2", "chair", "treasurer"] as const;
@@ -17,7 +18,7 @@ export default function MembersPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [panel, setPanel] = useState<"none" | "one" | "many">("none");
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,7 +39,7 @@ export default function MembersPage() {
         role: data.get("role") as Role,
       });
       form.reset();
-      setShowForm(false);
+      setPanel("none");
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -53,12 +54,22 @@ export default function MembersPage() {
           <span className="eyebrow">Chair</span>
           <h1 className="page-title mt-1.5">Members</h1>
         </div>
-        <button
-          className={showForm ? "btn-secondary" : "btn-primary"}
-          onClick={() => setShowForm(!showForm)}
-        >
-          {showForm ? "Cancel" : "Add a member"}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            className="btn-secondary"
+            aria-pressed={panel === "many"}
+            onClick={() => setPanel(panel === "many" ? "none" : "many")}
+          >
+            Paste a roster
+          </button>
+          <button
+            className="btn-primary"
+            aria-pressed={panel === "one"}
+            onClick={() => setPanel(panel === "one" ? "none" : "one")}
+          >
+            Add a member
+          </button>
+        </div>
       </div>
 
       <hr className="mt-5 border-rule-strong" />
@@ -72,7 +83,9 @@ export default function MembersPage() {
         </p>
       )}
 
-      {showForm && (
+      {panel === "many" && <ImportMembers onDone={() => setPanel("none")} />}
+
+      {panel === "one" && (
         <form onSubmit={handleCreate} className="leaf mt-6 p-6">
           <span className="eyebrow">New member</span>
           <div className="mt-5 grid gap-x-7 gap-y-5 sm:grid-cols-3">

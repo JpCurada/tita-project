@@ -300,7 +300,14 @@ export const eligibleCoMakers = memberQuery({
       .collect();
     return permanent
       .filter((m) => m._id !== ctx.member._id)
-      .map((m) => ({ _id: m._id, name: fullName(m), position: m.position }))
+      .map((m) => ({
+        _id: m._id,
+        name: fullName(m),
+        position: m.position,
+        // A co-maker on the roster who has never signed up cannot follow the
+        // loan they are standing for, so the borrower is told to nudge them.
+        registered: m.userId !== undefined,
+      }))
       .sort((a, b) => a.name.localeCompare(b.name));
   },
 });

@@ -23,6 +23,8 @@ export default function ApplyPage() {
   // dropdowns, so a 6,000 loan could be paired with an 1,800 deduction.
   const deduction = deductionFor(loanAmount) ?? 0;
 
+  const selectedCoMaker = coMakers?.find((c) => c._id === coMakerMemberId);
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
@@ -85,6 +87,12 @@ export default function ApplyPage() {
               </label>
             ))}
           </div>
+          {/* Both types carry the same amounts and the same five-month term;
+              the choice only records which one this was. */}
+          <p className="mt-2.5 text-xs text-ink-faint">
+            Both types use the same amounts and terms. This is recorded on your
+            form.
+          </p>
         </fieldset>
 
         {/* Amount and its consequence, shown as one statement. */}
@@ -150,12 +158,21 @@ export default function ApplyPage() {
               <option key={candidate._id} value={candidate._id}>
                 {candidate.name}
                 {candidate.position ? ` — ${candidate.position}` : ""}
+                {candidate.registered ? "" : " (not yet signed up)"}
               </option>
             ))}
           </select>
           <p className="mt-2.5 text-xs text-ink-faint">
-            Must be in permanent status, so only permanent members are listed.
+            Must be a registered member in permanent status, so only permanent
+            members are listed.
           </p>
+          {selectedCoMaker !== undefined && !selectedCoMaker.registered && (
+            <p className="mt-2.5 border-l-2 border-amber-ledger bg-amber-wash px-3 py-2 text-sm text-amber-ledger">
+              {selectedCoMaker.name} is on the roll but has not created an
+              account yet. You can still file — ask them to sign up so they can
+              follow this loan too.
+            </p>
+          )}
           {coMakers?.length === 0 && (
             <p className="mt-2.5 border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide">
               No permanent members are registered yet. Ask the chair to add them
