@@ -17,12 +17,21 @@
     );
   }
 
+  /* Poppins is geometric; a touch of negative tracking stops headings from
+     looking loose at large sizes. */
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.015em;
+  }
+
   /* Numbers are data: line them up. */
   .tnum {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
   }
 
+  /* Always visible, never only on hover — keyboard users need the anchor. */
   :focus-visible {
     @apply outline-none ring-2 ring-viridian ring-offset-2 ring-offset-bond;
   }
@@ -36,77 +45,86 @@
 @layer components {
   /* ---- Surfaces ------------------------------------------------------ */
 
-  /* A leaf of paper. Square corners, hairline rule, no floaty shadow. */
   .leaf {
-    @apply border border-rule bg-leaf shadow-leaf;
+    @apply rounded-lg border border-rule bg-leaf shadow-leaf;
+  }
+
+  /* Rows that respond to the pointer: a hairline lift, never a jump. */
+  .leaf-interactive {
+    @apply leaf transition-all duration-200 ease-out
+           hover:-translate-y-px hover:border-rule-strong hover:shadow-lift
+           active:translate-y-0 active:shadow-leaf;
   }
 
   /* ---- Typography ---------------------------------------------------- */
 
-  /* Eyebrow: the printed caption under a rule on a form. */
   .eyebrow {
-    @apply text-micro font-medium uppercase tracking-[0.14em] text-ink-faint;
+    @apply text-micro font-semibold uppercase tracking-[0.12em] text-ink-faint;
   }
 
   .page-title {
-    @apply font-display text-[1.75rem] font-medium leading-tight tracking-[-0.01em];
+    @apply font-display text-[1.625rem] font-semibold leading-tight;
   }
 
   .section-title {
-    @apply font-display text-lg font-medium leading-snug;
+    @apply font-display text-lg font-semibold leading-snug;
   }
 
   /* ---- Controls ------------------------------------------------------ */
 
   .label {
-    @apply mb-1.5 block text-micro font-medium uppercase tracking-[0.1em] text-ink-pencil;
+    @apply mb-1.5 block text-[0.8125rem] font-medium text-ink-pencil;
   }
 
-  /* Underline, not a box: a field ruled on a form. */
+  /* A real box. The underline-only field read as decoration, not as
+     something you could type into. */
   .input {
-    @apply w-full rounded-none border-0 border-b border-rule-strong bg-transparent px-0 py-2
-           text-sm text-ink transition-colors
+    @apply w-full rounded-md border border-rule-strong bg-white px-3 py-2.5
+           text-sm text-ink transition-all duration-150
            placeholder:text-ink-faint
-           focus:border-viridian focus:outline-none focus:ring-0
-           disabled:cursor-not-allowed disabled:text-ink-faint;
-  }
-
-  select.input {
-    @apply -ml-0.5 pl-0.5;
+           hover:border-ink-faint
+           focus:border-viridian focus:outline-none focus:ring-2 focus:ring-viridian/15
+           disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-ink-faint;
   }
 
   textarea.input {
-    @apply border border-rule-strong px-3 py-2 focus:border-viridian;
+    @apply leading-relaxed;
   }
 
   .btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-sm
-           px-4 py-2 text-sm font-medium transition-colors
-           disabled:cursor-not-allowed disabled:opacity-45;
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-md
+           px-4 py-2.5 text-sm font-medium
+           transition-all duration-150 ease-out
+           active:scale-[0.98]
+           disabled:pointer-events-none disabled:opacity-45;
   }
 
   .btn-primary {
-    @apply btn bg-ink text-leaf hover:bg-viridian;
+    @apply btn bg-ink text-leaf shadow-sm hover:bg-viridian hover:shadow-lift;
   }
 
   .btn-secondary {
-    @apply btn border border-rule-strong bg-transparent text-ink hover:border-ink hover:bg-black/[0.03];
+    @apply btn border border-rule-strong bg-white text-ink
+           hover:border-ink-faint hover:bg-black/[0.02];
   }
 
   .btn-danger {
-    @apply btn border border-oxide/40 bg-transparent text-oxide hover:bg-oxide hover:text-leaf;
+    @apply btn border border-oxide/40 bg-white text-oxide
+           hover:border-oxide hover:bg-oxide hover:text-white;
   }
 
   .btn-quiet {
-    @apply -mx-1 rounded-sm px-1 text-sm text-ink-pencil underline decoration-rule-strong
-           underline-offset-4 transition-colors hover:text-ink hover:decoration-ink;
+    @apply -mx-1 rounded px-1 text-sm font-medium text-ink-pencil
+           underline decoration-rule-strong underline-offset-4
+           transition-colors duration-150
+           hover:text-viridian hover:decoration-viridian;
   }
 
-  /* ---- Status ---------------------------------------------------------
-     A stamped mark, not a pill: square, ruled, letterspaced. */
+  /* ---- Status -------------------------------------------------------- */
+
   .stamp {
-    @apply inline-flex items-center gap-1.5 border px-2 py-[3px]
-           text-micro font-medium uppercase tracking-[0.1em];
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border
+           px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.06em];
   }
 
   /* ---- Ledger table -------------------------------------------------- */
@@ -116,8 +134,8 @@
   }
 
   .ledger thead th {
-    @apply border-b border-rule-strong px-4 py-2 text-left text-micro font-medium
-           uppercase tracking-[0.1em] text-ink-faint;
+    @apply border-b border-rule-strong px-4 py-2.5 text-left text-micro
+           font-semibold uppercase tracking-[0.08em] text-ink-faint;
   }
 
   .ledger tbody td {
@@ -126,6 +144,18 @@
 
   .ledger tbody tr:last-child td {
     @apply border-b-0;
+  }
+
+  .ledger tbody tr {
+    @apply transition-colors duration-150;
+  }
+
+  /* ---- Loading ---------------------------------------------------------
+     A skeleton in the shape of the content that is coming. A blank page with
+     the word "Loading" reads as broken; a shape reads as "nearly there". */
+  .skeleton {
+    @apply rounded bg-ink/[0.07];
+    animation: pulse-soft 1.6s ease-in-out infinite;
   }
 }
 
@@ -147,8 +177,46 @@
     -webkit-mask-repeat: repeat-y;
     mask-repeat: repeat-y;
   }
+
+  /* Content settles in rather than appearing: a short rise, no bounce. */
+  .rise {
+    animation: rise 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  /* Staggered list entrances. Capped low — past ~6 the wait is noticeable. */
+  .stagger > * {
+    animation: rise 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.02s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.06s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.1s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.14s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.18s; }
+  .stagger > *:nth-child(n + 6) { animation-delay: 0.22s; }
 }
 
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Motion is decoration here; the interface must work identically without it. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -157,5 +225,9 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .leaf-interactive:hover {
+    transform: none;
   }
 }

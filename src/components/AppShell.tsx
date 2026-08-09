@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { api } from "@convex/_generated/api";
+import { SkeletonPage } from "@/components/Skeleton";
 import { roleTitle } from "@/lib/format";
 
 const STAFF_ROLES = ["committee1", "committee2", "chair", "treasurer"];
@@ -31,9 +32,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const leave = () => void signOut().then(() => router.push("/signin"));
 
   if (member === undefined) {
+    // Chrome first, content after: the header is identical for every user, so
+    // showing it immediately makes the app feel loaded while data arrives.
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <span className="eyebrow">Loading</span>
+      <div className="min-h-screen">
+        <div className="border-b border-rule-strong bg-leaf">
+          <div className="mx-auto flex max-w-4xl items-center gap-2.5 px-5 py-4">
+            <Image src="/pit-logo.png" alt="" width={34} height={34} priority />
+            <div className="skeleton h-8 w-52" />
+          </div>
+        </div>
+        <div className="mx-auto max-w-4xl px-5 py-9">
+          <SkeletonPage />
+        </div>
       </div>
     );
   }
@@ -57,37 +68,46 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="border-b border-rule-strong bg-leaf">
-        <div className="mx-auto max-w-5xl px-5">
-          {/* Masthead: the association names itself, as it does on the form. */}
-          <div className="flex items-baseline justify-between gap-4 pt-4">
-            <Link href="/dashboard" className="group flex items-center gap-2.5">
+        <div className="mx-auto max-w-4xl px-5">
+          {/* Masthead. On a phone the institute line is dropped and the title
+              shortened: the header should not eat a fifth of a small screen. */}
+          <div className="flex items-center justify-between gap-3 pt-3.5">
+            <Link
+              href="/dashboard"
+              className="group flex min-w-0 items-center gap-2.5"
+            >
               <Image
                 src="/pit-logo.png"
                 alt=""
-                width={34}
-                height={34}
+                width={32}
+                height={32}
                 className="shrink-0"
                 priority
               />
-              <span>
-                <span className="eyebrow block text-ink-faint">
+              <span className="min-w-0">
+                <span className="eyebrow hidden text-ink-faint sm:block">
                   Palompon Institute of Technology
                 </span>
-                <span className="font-display text-base font-medium tracking-[-0.01em] text-ink transition-colors group-hover:text-viridian">
-                  Faculty Association
-                  <span className="text-ink-faint"> · Loan Committee</span>
+                <span className="block truncate font-display text-[0.9375rem] font-semibold text-ink transition-colors group-hover:text-viridian">
+                  <span className="sm:hidden">PIT Faculty Association</span>
+                  <span className="hidden sm:inline">
+                    Faculty Association
+                    <span className="font-normal text-ink-faint">
+                      {" · "}Loan Committee
+                    </span>
+                  </span>
                 </span>
               </span>
             </Link>
 
-            <div className="flex items-baseline gap-4 text-right">
-              <span className="hidden sm:block">
+            <div className="flex shrink-0 items-center gap-4">
+              <span className="hidden text-right sm:block">
                 <span className="block text-sm leading-tight">{member.name}</span>
                 <span className="eyebrow block text-ink-faint">
                   {roleTitle(member.role)}
                 </span>
               </span>
-              <button className="btn-quiet" onClick={leave}>
+              <button className="btn-quiet whitespace-nowrap" onClick={leave}>
                 Sign out
               </button>
             </div>
@@ -117,7 +137,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-9">{children}</main>
+      <main key={pathname} className="rise mx-auto max-w-4xl px-5 py-9">
+        {children}
+      </main>
     </div>
   );
 }

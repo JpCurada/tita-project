@@ -98,14 +98,17 @@ export default function ApplyPage() {
         {/* Amount and its consequence, shown as one statement. */}
         <fieldset>
           <legend className="label">Amount</legend>
-          <div className="grid gap-px border border-rule bg-rule sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             {LOAN_AMOUNTS.map((amount) => {
               const selected = amount === loanAmount;
               return (
                 <label
                   key={amount}
-                  className={`cursor-pointer bg-leaf px-4 py-4 transition-colors ${
-                    selected ? "bg-viridian-wash" : "hover:bg-black/[0.03]"
+                  className={`relative cursor-pointer rounded-lg border-2 bg-white px-4 py-4
+                              transition-all duration-150 ${
+                    selected
+                      ? "border-viridian bg-viridian-wash shadow-leaf"
+                      : "border-rule hover:border-ink-faint hover:shadow-leaf"
                   }`}
                 >
                   <input
@@ -116,9 +119,26 @@ export default function ApplyPage() {
                     onChange={() => setLoanAmount(amount)}
                     className="sr-only"
                   />
+                  {/* A tick, so selection does not rest on colour alone. */}
+                  {selected && (
+                    <span
+                      className="absolute right-3 top-3 grid h-4 w-4 place-items-center rounded-full bg-viridian text-white"
+                      aria-hidden="true"
+                    >
+                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                        <path
+                          d="M1.5 5.2 3.9 7.5 8.5 2.5"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  )}
                   <span
-                    className={`tnum block font-mono text-lg ${
-                      selected ? "font-medium text-viridian" : "text-ink"
+                    className={`tnum block font-mono text-lg font-medium ${
+                      selected ? "text-viridian" : "text-ink"
                     }`}
                   >
                     {formatPeso(amount)}

@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { ApplicationDetail } from "@/components/ApplicationDetail";
+import { SkeletonDetail } from "@/components/Skeleton";
 
 export default function MyApplicationPage() {
   const params = useParams<{ id: string }>();
@@ -14,7 +15,7 @@ export default function MyApplicationPage() {
   });
 
   if (application === undefined) {
-    return <p className="eyebrow">Loading</p>;
+    return <SkeletonDetail />;
   }
 
   return (

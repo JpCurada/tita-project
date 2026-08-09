@@ -54,7 +54,9 @@ export function PasswordField({
           // Not in the tab order: it sits between the password field and the
           // submit button, where a stop would interrupt every sign-in.
           tabIndex={-1}
-          className="absolute bottom-1.5 right-0 rounded-sm p-1.5 text-ink-faint transition-colors hover:text-ink focus-visible:text-ink"
+          className="absolute inset-y-1 right-1 grid w-9 place-items-center rounded
+                     text-ink-faint transition-colors duration-150
+                     hover:bg-black/[0.04] hover:text-ink"
         >
           <EyeIcon crossed={visible} />
         </button>

@@ -6,6 +6,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { ImportMembers } from "@/components/ImportMembers";
 import { errorMessage, roleSeat } from "@/lib/format";
+import { SkeletonTable } from "@/components/Skeleton";
 
 const ROLES = ["member", "committee1", "committee2", "chair", "treasurer"] as const;
 type Role = (typeof ROLES)[number];
@@ -135,7 +136,7 @@ export default function MembersPage() {
       )}
 
       {members === undefined ? (
-        <p className="eyebrow mt-8">Loading</p>
+        <SkeletonTable rows={6} columns={6} />
       ) : (
         <div className="mt-7 overflow-x-auto">
           <table className="ledger">

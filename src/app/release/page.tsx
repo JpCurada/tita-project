@@ -6,12 +6,13 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { QueueStub } from "@/components/QueueStub";
 import { errorMessage, formatPeso, toDateInputValue } from "@/lib/format";
+import { SkeletonPage } from "@/components/Skeleton";
 
 export default function ReleasePage() {
   const queue = useQuery(api.applications.listQueue);
 
   if (queue === undefined) {
-    return <p className="eyebrow">Loading</p>;
+    return <SkeletonPage rows={2} />;
   }
 
   const ready = queue.filter((app) => app.status === "approved");
@@ -32,7 +33,7 @@ export default function ReleasePage() {
           No approved loans are waiting for release.
         </p>
       ) : (
-        <ul className="mt-8 space-y-5">
+        <ul className="stagger mt-8 space-y-5">
           {ready.map((app) => (
             <ReleaseCard
               key={app._id}

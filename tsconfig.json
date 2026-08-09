@@ -19,6 +19,18 @@
       "@convex/*": ["./convex/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "convex/**/*.ts",
+    "scripts/**/*.mts",
+    "*.ts",
+    "*.mjs",
+    ".next/types/**/*.ts"
+  ],
+  // convex/tsconfig.json is JSONC (the Convex CLI writes it with comments).
+  // A bare "**/*" include sweeps it into Next's config scan, whose strict
+  // JSON.parse then fails the whole dev server with a parse error.
+  "exclude": ["node_modules", "convex/tsconfig.json", "convex/_generated/ai"]
 }

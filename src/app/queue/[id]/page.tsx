@@ -8,6 +8,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { ApplicationDetail } from "@/components/ApplicationDetail";
 import { errorMessage, roleTitle } from "@/lib/format";
+import { SkeletonDetail } from "@/components/Skeleton";
 
 export default function ReviewPage() {
   const params = useParams<{ id: string }>();
@@ -25,7 +26,7 @@ export default function ReviewPage() {
   );
 
   if (application === undefined || member === undefined) {
-    return <p className="eyebrow">Loading</p>;
+    return <SkeletonDetail />;
   }
   if (member === null) return null;
 

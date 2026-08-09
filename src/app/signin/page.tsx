@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PasswordField } from "@/components/PasswordField";
+import { Spinner } from "@/components/Spinner";
 import { errorMessage } from "@/lib/format";
 
 export default function SignInPage() {
@@ -33,74 +34,46 @@ export default function SignInPage() {
       router.push("/dashboard");
     } catch (caught) {
       setError(
-        flow === "signIn" ? "That email and password do not match." : errorMessage(caught),
+        flow === "signIn"
+          ? "That email and password do not match. Check for typos, or create an account if you have not made one yet."
+          : errorMessage(caught),
       );
       setSubmitting(false);
     }
   }
 
   return (
-    <main className="mx-auto grid min-h-screen max-w-5xl items-center gap-12 px-5 py-12 lg:grid-cols-[1.05fr_minmax(0,380px)]">
-      {/* Thesis: the form this replaces, quoted in its own words. */}
-      <section className="hidden lg:block">
-        <Image
-          src="/pit-logo.png"
-          alt="Seal of the Palompon Institute of Technology"
-          width={72}
-          height={72}
-          priority
-        />
-        <h1 className="page-title mt-5 text-[2.5rem] leading-[1.1]">
-          Palompon Institute of Technology
-          <span className="mt-1 block font-normal italic text-ink-pencil">
-            Faculty Association
-          </span>
-        </h1>
+    /* Signing in is the only job on this page, so the form sits in the centre
+       of the optical field rather than off to one side. Supporting context goes
+       below it, where it reassures without competing for attention. */
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-12">
+      <div className="rise">
+        <header className="text-center">
+          <Image
+            src="/pit-logo.png"
+            alt=""
+            width={60}
+            height={60}
+            className="mx-auto"
+            priority
+          />
+          <h1 className="page-title mt-4">PIT Faculty Association</h1>
+          <p className="mt-1.5 text-sm text-ink-pencil">
+            Loan Committee · Palompon, Leyte
+          </p>
+        </header>
 
-        <hr className="my-8 border-rule-strong" />
-
-        <p className="max-w-md font-display text-[1.0625rem] leading-relaxed text-ink-pencil">
-          <span className="text-ink">
-            “I hereby apply for a REGULAR/EMERGENCY loan
-          </span>{" "}
-          in the amount of{" "}
-          <span className="tnum border-b border-rule-strong px-1 font-mono text-[0.9375rem] text-ink">
-            P 12,000.00
-          </span>{" "}
-          payable within five (5) months to be deducted every quincena in the
-          amount of{" "}
-          <span className="tnum border-b border-rule-strong px-1 font-mono text-[0.9375rem] text-ink">
-            P 1,200.00
-          </span>
-          .”
-        </p>
-
-        <dl className="mt-10 grid max-w-md grid-cols-3 gap-px border border-rule bg-rule">
-          {[
-            ["Filed", "Queue number issued at once"],
-            ["Reviewed", "Two committee members, then the chair"],
-            ["Released", "Recorded and archived"],
-          ].map(([term, detail]) => (
-            <div key={term} className="bg-leaf px-3 py-3">
-              <dt className="eyebrow text-viridian">{term}</dt>
-              <dd className="mt-1.5 text-xs leading-snug text-ink-pencil">
-                {detail}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <section className="w-full">
-        <div className="leaf p-7">
-          <span className="eyebrow">
-            {flow === "signIn" ? "Members and committee" : "New account"}
-          </span>
-          <h2 className="section-title mt-1.5">
+        <div className="leaf mt-8 p-6 sm:p-7">
+          <h2 className="section-title">
             {flow === "signIn" ? "Sign in" : "Create your account"}
           </h2>
+          <p className="mt-1 text-sm text-ink-pencil">
+            {flow === "signIn"
+              ? "Use the email address registered with the association."
+              : "Use the email address the chair registered for you."}
+          </p>
 
-          <form onSubmit={handleSubmit} className="mt-7 space-y-6">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
             <div>
               <label className="label" htmlFor="email">
                 Email
@@ -111,6 +84,7 @@ export default function SignInPage() {
                 type="email"
                 autoComplete="email"
                 required
+                autoFocus
                 className="input"
                 placeholder="you@pit.edu.ph"
               />
@@ -124,25 +98,26 @@ export default function SignInPage() {
                 flow === "signIn" ? "current-password" : "new-password"
               }
               minLength={8}
-              hint={
-                flow === "signUp"
-                  ? "At least 8 characters. Use the email address the chair registered for you."
-                  : undefined
-              }
+              hint={flow === "signUp" ? "At least 8 characters." : undefined}
             />
 
             {error !== null && (
               <p
                 role="alert"
-                className="border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
+                className="rise rounded-md border-l-2 border-oxide bg-oxide-wash px-3 py-2.5 text-sm leading-relaxed text-oxide"
               >
                 {error}
               </p>
             )}
 
-            <button type="submit" disabled={submitting} className="btn-primary w-full">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn-primary w-full py-3"
+            >
+              {submitting && <Spinner />}
               {submitting
-                ? "Working"
+                ? "Signing in"
                 : flow === "signIn"
                   ? "Sign in"
                   : "Create account"}
@@ -163,7 +138,27 @@ export default function SignInPage() {
             {flow === "signIn" ? "Create one" : "Sign in"}
           </button>
         </p>
-      </section>
+
+        {/* What happens after signing in. Reassurance, not decoration. */}
+        <ol className="stagger mt-9 space-y-2.5 border-t border-rule pt-6">
+          {[
+            ["File", "Your loan number is issued the moment you apply."],
+            ["Review", "Two committee members decide, then the chair."],
+            ["Release", "The treasurer records it and files your form."],
+          ].map(([term, detail]) => (
+            <li key={term} className="flex gap-3 text-sm">
+              <span
+                className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-viridian"
+                aria-hidden="true"
+              />
+              <span>
+                <span className="font-medium">{term}.</span>{" "}
+                <span className="text-ink-pencil">{detail}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
     </main>
   );
 }

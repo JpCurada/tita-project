@@ -6,13 +6,14 @@ import { api } from "@convex/_generated/api";
 import { QueueStub } from "@/components/QueueStub";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, formatPeso } from "@/lib/format";
+import { SkeletonPage } from "@/components/Skeleton";
 
 export default function QueuePage() {
   const member = useQuery(api.members.getCurrentMember);
   const queue = useQuery(api.applications.listQueue);
 
   if (queue === undefined || member === undefined) {
-    return <p className="eyebrow">Loading</p>;
+    return <SkeletonPage rows={4} />;
   }
   if (member === null) return null;
 
@@ -61,7 +62,7 @@ export default function QueuePage() {
               Nothing is waiting on you.
             </p>
           ) : (
-            <ul className="mt-3 divide-y divide-rule border-y border-rule">
+            <ul className="stagger mt-3 divide-y divide-rule border-y border-rule">
               {mine.map((app) => (
                 <Row key={app._id} app={app} emphasis />
               ))}
@@ -79,7 +80,7 @@ export default function QueuePage() {
             No other applications are in progress.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-rule border-y border-rule">
+          <ul className="stagger mt-3 divide-y divide-rule border-y border-rule">
             {rest.map((app) => (
               <Row key={app._id} app={app} />
             ))}
@@ -109,7 +110,7 @@ function Row({
     <li>
       <Link
         href={`/queue/${app._id}`}
-        className="flex flex-wrap items-center gap-x-6 gap-y-3 py-3.5 transition-colors hover:bg-black/[0.02]"
+        className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded px-2 py-3.5 transition-colors duration-150 hover:bg-black/[0.025]"
       >
         <QueueStub
           queueNumber={app.queueNumber}

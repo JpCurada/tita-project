@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { api } from "@convex/_generated/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, formatPeso } from "@/lib/format";
+import { SkeletonTable } from "@/components/Skeleton";
 
 type Filter = "all" | "approved" | "rejected";
 
@@ -78,7 +79,7 @@ export default function ArchivePage() {
       </div>
 
       {archive === undefined ? (
-        <p className="eyebrow mt-8">Loading</p>
+        <SkeletonTable rows={5} columns={6} />
       ) : visible.length === 0 ? (
         <p className="mt-8 border border-dashed border-rule-strong px-5 py-12 text-center text-sm text-ink-pencil">
           {archive.length === 0
