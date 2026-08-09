@@ -3,6 +3,7 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PasswordField } from "@/components/PasswordField";
 import { errorMessage } from "@/lib/format";
 
 export default function SignInPage() {
@@ -108,28 +109,20 @@ export default function SignInPage() {
               />
             </div>
 
-            <div>
-              <label className="label" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete={
-                  flow === "signIn" ? "current-password" : "new-password"
-                }
-                required
-                minLength={8}
-                className="input"
-              />
-              {flow === "signUp" && (
-                <p className="mt-2 text-xs text-ink-faint">
-                  At least 8 characters. Use the email address the chair
-                  registered for you.
-                </p>
-              )}
-            </div>
+            <PasswordField
+              // Remount on flow change so the field clears and the reveal
+              // toggle resets between signing in and creating an account.
+              key={flow}
+              autoComplete={
+                flow === "signIn" ? "current-password" : "new-password"
+              }
+              minLength={8}
+              hint={
+                flow === "signUp"
+                  ? "At least 8 characters. Use the email address the chair registered for you."
+                  : undefined
+              }
+            />
 
             {error !== null && (
               <p

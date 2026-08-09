@@ -68,6 +68,59 @@ export const allocateOne = internalMutation({
   },
 });
 
+/**
+ * Deletes an auth account so it can be signed up again from scratch. Local
+ * recovery only, for when a half-finished seed leaves an unusable password.
+ */
+export const deleteAuthAccount = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const email = args.email.trim().toLowerCase();
+    const user = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", email))
+      .unique();
+    if (user === null) return "no such user";
+
+    // Unlink the membership so claimProfile can re-link the new account.
+    const member = await ctx.db
+      .query("members")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .unique();
+    if (member !== null) {
+      await ctx.db.patch(member._id, { userId: undefined });
+    }
+
+    for (const table of ["authAccounts", "authSessions"] as const) {
+      const rows = await ctx.db
+        .query(table)
+        .filter((q) => q.eq(q.field("userId"), user._id))
+        .collect();
+      await Promise.all(rows.map((row) => ctx.db.delete(row._id)));
+    }
+    await ctx.db.delete(user._id);
+    return `deleted ${email}`;
+  },
+});
+
+/** Inspector for local debugging: who exists, and is each account linked? */
+export const listMembers = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const members = await ctx.db.query("members").collect();
+    const users = await ctx.db.query("users").collect();
+    return {
+      members: members.map((m) => ({
+        name: `${m.firstName} ${m.lastName}`,
+        email: m.email,
+        role: m.role,
+        linked: m.userId !== undefined,
+      })),
+      authAccounts: users.map((u) => u.email ?? "(no email)"),
+    };
+  },
+});
+
 export const getApplication = internalQuery({
   args: { applicationId: v.id("applications") },
   handler: async (ctx, args) => {
