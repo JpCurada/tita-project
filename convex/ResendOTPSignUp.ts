@@ -53,9 +53,18 @@ export const ResendOTPSignUp = Resend({
       ].join("\n"),
     });
     if (error) {
-      throw new Error(
-        `Could not send the confirmation email: ${JSON.stringify(error)}`,
-      );
+      // Resend refuses every recipient but the account owner until a domain is
+      // verified. That reads as a mail outage otherwise, so name it: the fix is
+      // a DNS change, not a retry.
+      const detail = JSON.stringify(error);
+      if (/only send testing emails/i.test(detail)) {
+        throw new Error(
+          "EMAIL_NOT_CONFIGURED: this deployment can only send to the Resend " +
+            "account owner. Verify a domain at resend.com/domains and set " +
+            "AUTH_EMAIL_FROM, or switch off AUTH_REQUIRE_EMAIL_VERIFICATION.",
+        );
+      }
+      throw new Error(`Could not send the email: ${detail}`);
     }
   },
 });

@@ -34,6 +34,19 @@ export function isRuleViolation(error: unknown): error is { data: string } {
  */
 const KNOWN_FAULTS: { match: RegExp; message: string }[] = [
   {
+    /**
+     * Sending is not set up on this deployment. Resend refuses in several
+     * shapes before a domain is verified — only-the-owner (403), a rejected
+     * recipient domain (422), an unverified sender — and none of them are
+     * anything the person signing up can fix, so they all say the same thing
+     * rather than blaming their address.
+     */
+    match:
+      /EMAIL_NOT_CONFIGURED|only send testing emails|invalid `?to`? field|testing email address|domain is not verified|validation_error/i,
+    message:
+      "Email is not set up on this system yet, so no code could be sent. Ask the Loan Committee chair to finish the email setup.",
+  },
+  {
     match: /already exists/i,
     message:
       "An account already exists for that email address. Sign in instead, or reset your password if you have forgotten it.",

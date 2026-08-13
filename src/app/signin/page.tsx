@@ -86,7 +86,26 @@ export default function SignInPage() {
         return;
       } else if (flow === "signUp") {
         form.set("flow", "signUp");
-        await signIn("password", form);
+        try {
+          await signIn("password", form);
+        } catch (caught) {
+          // The account row is written before the code is sent, so a mail
+          // failure strands an unconfirmed account and every later attempt
+          // reports "already exists". Signing in re-sends the code for exactly
+          // that account, which is the recovery the person wants. A wrong
+          // password still fails, so this cannot take over someone else's.
+          if (!/already exists/i.test(String(caught))) throw caught;
+          const retry = new FormData();
+          retry.set("flow", "signIn");
+          retry.set("email", address);
+          retry.set("password", String(form.get("password") ?? ""));
+          const { signingIn } = await signIn("password", retry);
+          if (signingIn) {
+            // Already confirmed: they simply had an account all along.
+            router.push("/dashboard");
+            return;
+          }
+        }
         setEmail(address);
         setFlow("verify");
         setNotice(
@@ -100,9 +119,19 @@ export default function SignInPage() {
         return;
       } else {
         form.set("flow", flow);
-        await signIn("password", form);
-        router.push("/dashboard");
-        return;
+        const { signingIn } = await signIn("password", form);
+        if (!signingIn) {
+          // Correct password, but the address was never confirmed — the server
+          // has just sent a fresh code rather than a session.
+          setEmail(address);
+          setFlow("verify");
+          setNotice(
+            `Confirm your email first. We sent a new code to ${address}.`,
+          );
+        } else {
+          router.push("/dashboard");
+          return;
+        }
       }
     } catch (caught) {
       if (flow === "reset") {
