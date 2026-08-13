@@ -29,11 +29,19 @@ each fixed here:
 | `member` | File an application; see **only their own** |
 | `committee1` | Read the queue; cast one decision |
 | `committee2` | Read the queue; cast one decision |
-| `chair` | Final decision; manage members |
+| `chair` | Final decision; manage members; may also record releases |
 | `treasurer` | Record releases. **Cannot** vote on approvals |
 
-Approval is restricted to Committee Member 1, Committee Member 2 and the Chair — enforced in
-every Convex function, not merely hidden in the UI.
+Approval is restricted to the two committee seats and the chair — enforced in every Convex
+function, not merely hidden in the UI. Both seats are shown as "Committee Member"; they are
+stored separately only so the system can tell the two decisions on a loan apart.
+
+The chair may hold the treasurer's duties as well, which is the association's present
+arrangement — `recordRelease` accepts either role.
+
+Members **register themselves**. Anyone can create an account and file a loan straight away;
+permanent status is self-declared and the committee checks it at review, as it did on paper.
+The chair assigns the committee seats.
 
 ## Flow
 
@@ -67,8 +75,8 @@ npm run dev
 
 ### Creating the first chair
 
-Nobody can onboard members until a chair exists. Sign up in the app with the chair's email,
-then promote that account from the CLI:
+Nobody can assign committee seats until a chair exists. Sign up in the app with the chair's
+email, then promote that account from the CLI:
 
 ```bash
 npx convex run members:bootstrapChair '{
@@ -80,15 +88,18 @@ npx convex run members:bootstrapChair '{
 ```
 
 `bootstrapChair` is an `internalMutation`, so it is unreachable from any browser, and it
-refuses to run once a chair exists. The chair then adds everyone else under **Members**.
+refuses to run once a chair exists.
 
-Members sign up themselves with the email address the chair registered; the accounts link
-automatically on first sign-in.
+For a working set of members and loans at every stage:
+
+```bash
+node scripts/seed.mjs --reset
+```
 
 ## Verification
 
 ```bash
-node scripts/verify.mjs        # 47 assertions against a live deployment
+node scripts/verify.mjs --wipe            # 49 assertions against a live deployment
 npx tsx scripts/pdf-preview.mts out.pdf   # render the printable form
 ```
 
@@ -96,24 +107,31 @@ npx tsx scripts/pdf-preview.mts out.pdf   # render the printable form
 would, covering: queue-number allocation under 20 truly concurrent submissions, every
 authorization boundary, the full approval and rejection paths, and printable-form access.
 
-> It resets all application data first — run it against a **dev** deployment only.
+> **Destructive.** It deletes every member, application and approval first, which is why
+> `--wipe` is required. It refuses anything that is not a dev deployment. Run
+> `node scripts/seed.mjs --reset` afterwards to restore the roster.
 
-## Deploying to Vercel
+### Building locally
 
-1. **Build command:** `npx convex deploy --cmd 'npm run build'`
-2. **Environment variable:** `CONVEX_DEPLOY_KEY` — a *production* deploy key from the Convex
-   dashboard. `NEXT_PUBLIC_CONVEX_URL` is injected automatically by `convex deploy`; do not
-   set it by hand.
-3. After the first deploy, initialise auth keys on production:
-   ```bash
-   npx @convex-dev/auth --prod
-   ```
-   Skipping this causes sign-in to fail in a way that looks like nothing is wrong.
-4. Set `SITE_URL` on the Convex production deployment to the Vercel domain.
-5. Create the first chair against production by adding `--prod` to the `bootstrapChair` command.
+`npm run build` writes to `.next-build`, not `.next`, so a local production build cannot
+delete the chunks a running `next dev` is serving. Vercel runs `npm run build:ci`, which uses
+the default `.next`.
 
-For preview deployments, add a separate **preview** deploy key scoped to Vercel's Preview
-environment; each branch then gets its own isolated Convex backend.
+## Deploying
+
+See [docs/DEPLOY.md](docs/DEPLOY.md) for the full sequence. In short:
+
+1. `npx convex deploy` to create the production deployment, then take a
+   production deploy key from the Convex dashboard.
+2. Set the production environment on Convex, including `npx @convex-dev/auth
+   --prod` — skipping that makes sign-in fail in a way that looks like nothing
+   is wrong.
+3. Import the repository on Vercel and set `CONVEX_DEPLOY_KEY`. The build
+   command comes from `vercel.json`. Do not set `NEXT_PUBLIC_CONVEX_URL`;
+   `convex deploy` injects it.
+4. Sign up as the chair on the live site, then promote that account with
+   `npx convex run members:bootstrapChair '{...}' --prod`.
+5. Verify `pit.edu.ph` with Resend. Until then no email reaches members.
 
 ## Layout
 
@@ -122,7 +140,9 @@ convex/
   schema.ts          tables + indexes
   applications.ts    submission, state machine, queries
   members.ts         member management, bootstrapChair
-  testing.ts         internal helpers for scripts/verify.mjs
+  testing.ts         internal helpers for the scripts
+  notify.ts          outgoing email, scheduled from the mutations
+  ResendOTP*.ts      sign-up confirmation and password reset codes
   lib/
     auth.ts          role wrappers — the authorization boundary
     queue.ts         atomic queue-number allocation
@@ -153,5 +173,11 @@ src/
 - **Nothing was imported** from the old workbook. Its five `Archive` rows are test data
   (`srg`, `SAASADA`, `dasdasd`), four carry `#N/A` dates, and the amount column never held a
   real amount. Numbering starts clean at `26-0001`.
-- **Amounts print as `PHP 12,000.00`.** The standard PDF fonts have no `₱` glyph and would
-  render a wrong character; embedding a font for one symbol is not worth the bundle size.
+- **Amounts print as `P 12,000.00`**, matching `Loan Application Form.doc`. The standard PDF
+  fonts have no `₱` glyph and would render a wrong character.
+- **Email reaches nobody until `pit.edu.ph` is verified with Resend.** Password reset, loan
+  notifications and sign-up confirmation all depend on it. See
+  [docs/DEPLOY.md](docs/DEPLOY.md) section 6.
+- **Anyone can register.** There is no restriction on the email address, so the committee's
+  review is the only check on who files a loan. Restricting sign-up to `@pit.edu.ph` is a
+  small change if that turns out to be too open.
