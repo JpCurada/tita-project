@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { LOAN_AMOUNTS, deductionFor } from "@convex/lib/loan";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { errorMessage, formatPeso } from "@/lib/format";
 
 export default function ApplyPage() {
@@ -18,6 +19,7 @@ export default function ApplyPage() {
   const [coMakerMemberId, setCoMakerMemberId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   // Derived, never chosen separately. The workbook offered these as two loose
   // dropdowns, so a 6,000 loan could be paired with an 1,800 deduction.
@@ -25,7 +27,7 @@ export default function ApplyPage() {
 
   const selectedCoMaker = coMakers?.find((c) => c._id === coMakerMemberId);
 
-  async function handleSubmit(event: React.FormEvent) {
+  function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
 
@@ -33,7 +35,11 @@ export default function ApplyPage() {
       setError("Choose a co-maker before filing.");
       return;
     }
+    setConfirming(true);
+  }
 
+  async function file() {
+    setError(null);
     setSubmitting(true);
     try {
       await submit({
@@ -45,6 +51,7 @@ export default function ApplyPage() {
       router.push("/dashboard");
     } catch (caught) {
       setError(errorMessage(caught));
+      setConfirming(false);
       setSubmitting(false);
     }
   }
@@ -219,10 +226,47 @@ export default function ApplyPage() {
             Cancel
           </button>
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "Filing" : "File application"}
+            File application
           </button>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={confirming}
+        title="File this application?"
+        confirmLabel="Yes, file it"
+        busy={submitting}
+        busyLabel="Filing"
+        onConfirm={() => void file()}
+        onCancel={() => setConfirming(false)}
+      >
+        <dl className="space-y-1.5">
+          <div className="flex justify-between gap-4">
+            <dt>Loan type</dt>
+            <dd className="font-medium capitalize text-ink">{loanType}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt>Amount</dt>
+            <dd className="tnum font-mono font-medium text-ink">
+              {formatPeso(loanAmount)}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt>Per payday</dt>
+            <dd className="tnum font-mono font-medium text-ink">
+              {formatPeso(deduction)} × 10
+            </dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt>Co-maker</dt>
+            <dd className="font-medium text-ink">{selectedCoMaker?.name}</dd>
+          </div>
+        </dl>
+        <p className="mt-3">
+          Your loan number is issued now. You cannot file another application
+          until this one is released or declined.
+        </p>
+      </ConfirmDialog>
     </div>
   );
 }

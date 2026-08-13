@@ -17,7 +17,8 @@ export function PasswordField({
   hint,
 }: {
   name?: string;
-  label?: string;
+  /** Pass null when the caller renders its own label alongside other controls. */
+  label?: string | null;
   autoComplete?: string;
   minLength?: number;
   hint?: string;
@@ -28,9 +29,11 @@ export function PasswordField({
 
   return (
     <div>
-      <label className="label" htmlFor={id}>
-        {label}
-      </label>
+      {label !== null && (
+        <label className="label" htmlFor={id}>
+          {label}
+        </label>
+      )}
 
       <div className="relative">
         <input
@@ -40,6 +43,8 @@ export function PasswordField({
           autoComplete={autoComplete}
           required
           minLength={minLength}
+          // Without a rendered <label> the field still needs a name.
+          aria-label={label === null ? "Password" : undefined}
           aria-describedby={hint ? hintId : undefined}
           // Room for the toggle, so a long password never runs under it.
           className="input pr-10"

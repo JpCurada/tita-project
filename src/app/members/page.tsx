@@ -4,12 +4,31 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ImportMembers } from "@/components/ImportMembers";
 import { errorMessage, roleSeat } from "@/lib/format";
 import { SkeletonTable } from "@/components/Skeleton";
 
 const ROLES = ["member", "committee1", "committee2", "chair", "treasurer"] as const;
 type Role = (typeof ROLES)[number];
+
+/**
+ * What the chair actually chooses. The two committee seats are one choice here
+ * — they are not numbered posts, and the system only keeps them apart so it can
+ * tell the two decisions on a loan apart. Picking "Committee Member" takes
+ * whichever seat is free.
+ */
+const CHOICES = ["member", "committee", "chair", "treasurer"] as const;
+type Choice = (typeof CHOICES)[number];
+
+function choiceLabel(choice: Choice): string {
+  return choice === "committee" ? "Committee Member" : roleSeat(choice);
+}
+
+/** The choice a stored role belongs to, for showing the select's value. */
+function choiceOf(role: Role): Choice {
+  return role === "committee1" || role === "committee2" ? "committee" : role;
+}
 
 export default function MembersPage() {
   const members = useQuery(api.members.list);
@@ -20,6 +39,65 @@ export default function MembersPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [panel, setPanel] = useState<"none" | "one" | "many">("none");
+
+  // Staged changes awaiting confirmation. The selects stay controlled by server
+  // state, so cancelling one snaps the control back on its own.
+  const [roleChange, setRoleChange] = useState<{
+    memberId: Id<"members">;
+    name: string;
+    from: Role;
+    to: Role;
+  } | null>(null);
+  const [activeChange, setActiveChange] = useState<{
+    memberId: Id<"members">;
+    name: string;
+    active: boolean;
+  } | null>(null);
+  const [applying, setApplying] = useState(false);
+
+  /**
+   * Turns the chair's choice into a stored role. "Committee Member" takes the
+   * free seat; if this person already holds one, they keep it.
+   */
+  function resolveRole(choice: Choice, current: Role): Role {
+    if (choice !== "committee") return choice;
+    if (current === "committee1" || current === "committee2") return current;
+    const taken = new Set(
+      (members ?? []).filter((m) => m.active).map((m) => m.role),
+    );
+    return taken.has("committee1") ? "committee2" : "committee1";
+  }
+
+  async function applyRoleChange() {
+    if (roleChange === null) return;
+    setApplying(true);
+    try {
+      await setRole({ memberId: roleChange.memberId, role: roleChange.to });
+      setRoleChange(null);
+    } catch (caught) {
+      setError(errorMessage(caught));
+      setRoleChange(null);
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  async function applyActiveChange() {
+    if (activeChange === null) return;
+    setApplying(true);
+    try {
+      await setActive({
+        memberId: activeChange.memberId,
+        active: activeChange.active,
+      });
+      setActiveChange(null);
+    } catch (caught) {
+      setError(errorMessage(caught));
+      setActiveChange(null);
+    } finally {
+      setApplying(false);
+    }
+  }
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,7 +115,7 @@ export default function MembersPage() {
         email: String(data.get("email")),
         position: String(data.get("position") ?? "") || undefined,
         isPermanent: data.get("isPermanent") === "on",
-        role: data.get("role") as Role,
+        role: resolveRole(data.get("role") as Choice, "member"),
       });
       form.reset();
       setPanel("none");
@@ -104,9 +182,9 @@ export default function MembersPage() {
                 Role
               </label>
               <select id="role" name="role" className="input" defaultValue="member">
-                {ROLES.map((role) => (
-                  <option key={role} value={role}>
-                    {roleSeat(role)}
+                {CHOICES.map((choice) => (
+                  <option key={choice} value={choice}>
+                    {choiceLabel(choice)}
                   </option>
                 ))}
               </select>
@@ -176,17 +254,22 @@ export default function MembersPage() {
                     <select
                       className="input py-1 text-sm"
                       aria-label={`Role for ${member.name}`}
-                      value={member.role}
+                      value={choiceOf(member.role as Role)}
                       onChange={(event) =>
-                        void setRole({
+                        setRoleChange({
                           memberId: member._id as Id<"members">,
-                          role: event.target.value as Role,
-                        }).catch((caught) => setError(errorMessage(caught)))
+                          name: member.name,
+                          from: member.role as Role,
+                          to: resolveRole(
+                            event.target.value as Choice,
+                            member.role as Role,
+                          ),
+                        })
                       }
                     >
-                      {ROLES.map((role) => (
-                        <option key={role} value={role}>
-                          {roleSeat(role)}
+                      {CHOICES.map((choice) => (
+                        <option key={choice} value={choice}>
+                          {choiceLabel(choice)}
                         </option>
                       ))}
                     </select>
@@ -202,10 +285,11 @@ export default function MembersPage() {
                     <button
                       className="btn-quiet"
                       onClick={() =>
-                        void setActive({
+                        setActiveChange({
                           memberId: member._id as Id<"members">,
+                          name: member.name,
                           active: !member.active,
-                        }).catch((caught) => setError(errorMessage(caught)))
+                        })
                       }
                     >
                       {member.active ? "Deactivate" : "Reactivate"}
@@ -217,6 +301,59 @@ export default function MembersPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={roleChange !== null}
+        title="Change this role?"
+        confirmLabel="Change role"
+        busy={applying}
+        busyLabel="Changing"
+        onConfirm={() => void applyRoleChange()}
+        onCancel={() => setRoleChange(null)}
+      >
+        <p>
+          <span className="font-medium text-ink">{roleChange?.name}</span> moves
+          from <span className="font-medium text-ink">
+            {roleChange && roleSeat(roleChange.from)}
+          </span>{" "}
+          to{" "}
+          <span className="font-medium text-ink">
+            {roleChange && roleSeat(roleChange.to)}
+          </span>
+          .
+        </p>
+        {roleChange?.to !== "member" && (
+          <p className="mt-2.5">
+            Committee seats are held by one person at a time. If someone already
+            holds this seat, reassign them first.
+          </p>
+        )}
+        {roleChange?.from !== "member" && (
+          <p className="mt-2.5">
+            They lose the access that came with their present seat.
+          </p>
+        )}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={activeChange !== null}
+        title={
+          activeChange?.active ? "Reactivate this member?" : "Deactivate this member?"
+        }
+        confirmLabel={activeChange?.active ? "Reactivate" : "Deactivate"}
+        tone={activeChange?.active ? "default" : "danger"}
+        busy={applying}
+        busyLabel="Saving"
+        onConfirm={() => void applyActiveChange()}
+        onCancel={() => setActiveChange(null)}
+      >
+        <p>
+          <span className="font-medium text-ink">{activeChange?.name}</span>
+          {activeChange?.active
+            ? " regains access and can file loans again."
+            : " loses access immediately and cannot file or stand as co-maker. Their past loans stay in the archive."}
+        </p>
+      </ConfirmDialog>
     </div>
   );
 }

@@ -183,6 +183,22 @@
     animation: rise 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   }
 
+  .fade-in {
+    animation: fade-in 0.18s ease-out both;
+  }
+
+  /* The panel arrives from where it will live: up from the edge on a phone,
+     scaled in place on a larger screen. */
+  .dialog-panel {
+    animation: sheet-up 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  @media (min-width: 640px) {
+    .dialog-panel {
+      animation: dialog-in 0.2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+  }
+
   /* Staggered list entrances. Capped low — past ~6 the wait is noticeable. */
   .stagger > * {
     animation: rise 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
@@ -202,6 +218,35 @@
   }
   to {
     opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
     transform: none;
   }
 }

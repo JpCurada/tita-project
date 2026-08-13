@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { QueueStub } from "@/components/QueueStub";
 import { errorMessage, formatPeso, toDateInputValue } from "@/lib/format";
 import { SkeletonPage } from "@/components/Skeleton";
@@ -65,9 +66,15 @@ function ReleaseCard({
   const [date, setDate] = useState(toDateInputValue(Date.now()));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  async function handleRelease(event: React.FormEvent) {
-    event.preventDefault();
+  const enteredAmount = Number(amount);
+  // Worth calling out before committing: the amount released is what the
+  // borrower is recorded as having received.
+  const differsFromApproved =
+    Number.isFinite(enteredAmount) && enteredAmount !== loanAmount;
+
+  async function handleRelease() {
     setError(null);
     setSaving(true);
     try {
@@ -75,11 +82,13 @@ function ReleaseCard({
       // stored instant is read back in another timezone.
       await recordRelease({
         applicationId,
-        releasedAmount: Number(amount),
+        releasedAmount: enteredAmount,
         releasedAt: new Date(`${date}T12:00:00+08:00`).getTime(),
       });
+      setConfirming(false);
     } catch (caught) {
       setError(errorMessage(caught));
+      setConfirming(false);
       setSaving(false);
     }
   }
@@ -95,7 +104,10 @@ function ReleaseCard({
       </div>
 
       <form
-        onSubmit={handleRelease}
+        onSubmit={(event) => {
+          event.preventDefault();
+          setConfirming(true);
+        }}
         className="mt-5 flex flex-wrap items-end gap-x-7 gap-y-4 border-t border-rule pt-5"
       >
         <div className="w-40">
@@ -127,7 +139,7 @@ function ReleaseCard({
           />
         </div>
         <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? "Recording" : "Record release"}
+          Record release
         </button>
       </form>
 
@@ -139,6 +151,44 @@ function ReleaseCard({
           {error}
         </p>
       )}
+
+      <ConfirmDialog
+        open={confirming}
+        title="Record this release?"
+        confirmLabel="Record release"
+        busy={saving}
+        busyLabel="Recording"
+        onConfirm={() => void handleRelease()}
+        onCancel={() => setConfirming(false)}
+      >
+        <p>
+          Loan{" "}
+          <span className="tnum font-mono font-medium text-ink">
+            {queueNumber}
+          </span>{" "}
+          for <span className="font-medium text-ink">{borrowerName}</span>.
+        </p>
+        <dl className="mt-3 space-y-1.5">
+          <div className="flex justify-between gap-4">
+            <dt>Amount released</dt>
+            <dd className="tnum font-mono font-medium text-ink">
+              {formatPeso(enteredAmount)}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt>Date released</dt>
+            <dd className="font-medium text-ink">{date}</dd>
+          </div>
+        </dl>
+        {differsFromApproved && (
+          <p className="mt-3 border-l-2 border-amber-ledger bg-amber-wash px-3 py-2 text-amber-ledger">
+            This differs from the approved amount of {formatPeso(loanAmount)}.
+          </p>
+        )}
+        <p className="mt-3">
+          This files the application into the archive. It cannot be undone.
+        </p>
+      </ConfirmDialog>
     </li>
   );
 }

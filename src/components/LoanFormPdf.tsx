@@ -58,17 +58,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 3,
   },
+  // A fixed width, not a minimum: `minWidth` leaves the Text at its content
+  // width, so `textAlign: center` has nothing to centre within and the caption
+  // sits at the left end of its rule.
+  sigBlock: { width: 232 },
   sigName: {
     fontFamily: "Times-Bold",
     textAlign: "center",
-    minWidth: 224,
+    width: 232,
     paddingBottom: 1,
   },
   sigRule: {
     borderTopWidth: 0.9,
     borderTopColor: "#000",
     paddingTop: 2,
-    minWidth: 224,
+    width: 232,
     textAlign: "center",
     fontSize: 8.5,
   },
@@ -135,10 +139,10 @@ function Signature({
   extra?: string;
 }) {
   return (
-    <View>
+    <View style={styles.sigBlock}>
       <Text style={styles.sigName}>{name || " "}</Text>
       <Text style={styles.sigRule}>{caption}</Text>
-      {extra && <Text style={styles.caption}>{extra}</Text>}
+      {extra && <Text style={[styles.caption, { width: 232 }]}>{extra}</Text>}
     </View>
   );
 }
@@ -233,18 +237,16 @@ export function LoanFormPdf({ data }: { data: LoanFormData }) {
           <Text style={styles.sigName}>
             {data.treasurerName ?? data.releasedByName ?? " "}
           </Text>
-          <Text style={[styles.caption, { minWidth: 224 }]}>FA Treasurer</Text>
+          <Text style={[styles.caption, { width: 232 }]}>FA Treasurer</Text>
         </View>
 
-        <View style={{ marginTop: 14 }}>
-          <Text style={[styles.sigName, { minWidth: 168 }]}>
+        <View style={{ marginTop: 14, width: 232 }}>
+          <Text style={styles.sigName}>
             {data.releasedAt === undefined
               ? " "
               : fmt(data.releasedAt, { dateStyle: "long" })}
           </Text>
-          <Text style={[styles.sigRule, { minWidth: 168 }]}>
-            Signature &amp; Date Released
-          </Text>
+          <Text style={styles.sigRule}>Signature &amp; Date Released</Text>
         </View>
 
         {/* Left-aligned, not justified: justification stretches the spaces

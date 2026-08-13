@@ -7,7 +7,8 @@ import { useState } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { ApplicationDetail } from "@/components/ApplicationDetail";
-import { errorMessage, roleTitle } from "@/lib/format";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { errorMessage, formatPeso, roleTitle } from "@/lib/format";
 import { SkeletonDetail } from "@/components/Skeleton";
 
 export default function ReviewPage() {
@@ -97,72 +98,23 @@ export default function ReviewPage() {
                   </p>
                 )}
 
-                {confirming === null ? (
-                  <div className="flex flex-wrap items-center gap-4">
-                    <button
-                      className="btn-primary"
-                      onClick={() => setConfirming("approved")}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      className="btn-danger"
-                      onClick={() => setConfirming("rejected")}
-                    >
-                      Disapprove
-                    </button>
-                    <p className="text-xs text-ink-faint">
-                      A decision is final and cannot be changed.
-                    </p>
-                  </div>
-                ) : (
-                  <div
-                    className={`border-l-2 p-4 ${
-                      confirming === "rejected"
-                        ? "border-oxide bg-oxide-wash"
-                        : "border-viridian bg-viridian-wash"
-                    }`}
+                <div className="flex flex-wrap items-center gap-4">
+                  <button
+                    className="btn-primary"
+                    onClick={() => setConfirming("approved")}
                   >
-                    <p className="text-sm leading-relaxed text-ink">
-                      {confirming === "rejected" ? (
-                        <>
-                          Disapprove loan {application.queueNumber} for{" "}
-                          {application.borrowerName}? This ends the application
-                          immediately — the remaining approvers will not be
-                          asked.
-                        </>
-                      ) : (
-                        <>
-                          Approve loan {application.queueNumber} for{" "}
-                          {application.borrowerName}? Your name is recorded
-                          against this decision.
-                        </>
-                      )}
-                    </p>
-                    <div className="mt-4 flex flex-wrap items-center gap-4">
-                      <button
-                        className={
-                          confirming === "rejected" ? "btn-danger" : "btn-primary"
-                        }
-                        disabled={pending !== null}
-                        onClick={() => void decide(confirming)}
-                      >
-                        {pending !== null
-                          ? "Recording"
-                          : confirming === "rejected"
-                            ? "Yes, disapprove"
-                            : "Yes, approve"}
-                      </button>
-                      <button
-                        className="btn-quiet"
-                        disabled={pending !== null}
-                        onClick={() => setConfirming(null)}
-                      >
-                        Go back
-                      </button>
-                    </div>
-                  </div>
-                )}
+                    Approve
+                  </button>
+                  <button
+                    className="btn-danger"
+                    onClick={() => setConfirming("rejected")}
+                  >
+                    Disapprove
+                  </button>
+                  <p className="text-xs text-ink-faint">
+                    A decision is final and cannot be changed.
+                  </p>
+                </div>
               </div>
             ) : (
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-pencil">
@@ -189,6 +141,44 @@ export default function ReviewPage() {
           </section>
         )}
       </ApplicationDetail>
+
+      <ConfirmDialog
+        open={confirming !== null}
+        title={
+          confirming === "rejected"
+            ? "Disapprove this application?"
+            : "Approve this application?"
+        }
+        confirmLabel={
+          confirming === "rejected" ? "Yes, disapprove" : "Yes, approve"
+        }
+        cancelLabel="Go back"
+        tone={confirming === "rejected" ? "danger" : "default"}
+        busy={pending !== null}
+        busyLabel="Recording"
+        onConfirm={() => confirming !== null && void decide(confirming)}
+        onCancel={() => setConfirming(null)}
+      >
+        <p>
+          Loan{" "}
+          <span className="tnum font-mono font-medium text-ink">
+            {application.queueNumber}
+          </span>{" "}
+          for{" "}
+          <span className="font-medium text-ink">{application.borrowerName}</span>
+          , {formatPeso(application.loanAmount)}.
+        </p>
+        <p className="mt-2.5">
+          {confirming === "rejected"
+            ? "This ends the application immediately — the remaining approvers will not be asked. It cannot be undone."
+            : "Your name is recorded against this decision permanently. It cannot be changed."}
+        </p>
+        {remarks.trim() !== "" && (
+          <p className="mt-3 border-l-2 border-rule-strong pl-3 italic">
+            “{remarks.trim()}”
+          </p>
+        )}
+      </ConfirmDialog>
     </div>
   );
 }

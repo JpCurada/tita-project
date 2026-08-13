@@ -5,8 +5,10 @@ import { useMutation, useQuery } from "convex/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { api } from "@convex/_generated/api";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { SiteFooter } from "@/components/SiteFooter";
 import { SkeletonPage } from "@/components/Skeleton";
 import { roleTitle } from "@/lib/format";
 
@@ -29,28 +31,36 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [member, claimProfile]);
 
-  const leave = () => void signOut().then(() => router.push("/signin"));
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function leave() {
+    setSigningOut(true);
+    await signOut();
+    router.push("/signin");
+  }
 
   if (member === undefined) {
     // Chrome first, content after: the header is identical for every user, so
     // showing it immediately makes the app feel loaded while data arrives.
     return (
-      <div className="min-h-screen">
+      <div className="flex min-h-screen flex-col">
         <div className="border-b border-rule-strong bg-leaf">
           <div className="mx-auto flex max-w-4xl items-center gap-2.5 px-5 py-4">
             <Image src="/pit-logo.png" alt="" width={34} height={34} priority />
             <div className="skeleton h-8 w-52" />
           </div>
         </div>
-        <div className="mx-auto max-w-4xl px-5 py-9">
+        <div className="mx-auto w-full max-w-4xl flex-1 px-5 py-9">
           <SkeletonPage />
         </div>
+        <SiteFooter />
       </div>
     );
   }
 
   if (member === null) {
-    return <NotLinked onSignOut={leave} />;
+    return <NotLinked onSignOut={() => void leave()} />;
   }
 
   const isStaff = STAFF_ROLES.includes(member.role);
@@ -66,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (isChair) links.push({ href: "/members", label: "Members" });
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <header className="border-b border-rule-strong bg-leaf">
         <div className="mx-auto max-w-4xl px-5">
           {/* Masthead. On a phone the institute line is dropped and the title
@@ -107,7 +117,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {roleTitle(member.role)}
                 </span>
               </span>
-              <button className="btn-quiet whitespace-nowrap" onClick={leave}>
+              <button
+                className="btn-quiet whitespace-nowrap"
+                onClick={() => setConfirmingSignOut(true)}
+              >
                 Sign out
               </button>
             </div>
@@ -137,16 +150,32 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main key={pathname} className="rise mx-auto max-w-4xl px-5 py-9">
+      <main key={pathname} className="rise mx-auto w-full max-w-4xl flex-1 px-5 py-9">
         {children}
       </main>
+
+      <SiteFooter />
+
+      <ConfirmDialog
+        open={confirmingSignOut}
+        title="Sign out?"
+        confirmLabel="Sign out"
+        busy={signingOut}
+        busyLabel="Signing out"
+        onConfirm={() => void leave()}
+        onCancel={() => setConfirmingSignOut(false)}
+      >
+        You will need your email and password to get back in. Nothing you have
+        filed is lost.
+      </ConfirmDialog>
     </div>
   );
 }
 
 function NotLinked({ onSignOut }: { onSignOut: () => void }) {
   return (
-    <main className="flex min-h-screen items-center justify-center px-5">
+    <div className="flex min-h-screen flex-col">
+      <main className="flex flex-1 items-center justify-center px-5 py-12">
       <div className="leaf max-w-md p-8">
         <span className="eyebrow">Membership</span>
         <h1 className="section-title mt-2">This account is not on the roll yet</h1>
@@ -159,6 +188,8 @@ function NotLinked({ onSignOut }: { onSignOut: () => void }) {
           Sign out
         </button>
       </div>
-    </main>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

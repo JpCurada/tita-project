@@ -86,16 +86,13 @@ export function roleTitle(role: string): string {
   }
 }
 
-/** Distinguishes the two seats where an admin screen must manage them. */
+/**
+ * The association has two committee seats, but they are not numbered posts —
+ * both holders are simply "Committee Member", as the form prints them. The
+ * seats exist only so the system can tell the two decisions apart.
+ */
 export function roleSeat(role: string): string {
-  switch (role) {
-    case "committee1":
-      return "Committee Member 1";
-    case "committee2":
-      return "Committee Member 2";
-    default:
-      return roleTitle(role);
-  }
+  return roleTitle(role);
 }
 
 /**
