@@ -323,6 +323,7 @@ try {
     session.c1.mutation(api.applications.castDecision, {
       applicationId,
       decision: "rejected",
+      remarks: "Reaching the stage gate, not the reason check.",
     }),
     "closed",
   );
@@ -379,6 +380,24 @@ try {
     loanAmount: 6000,
     deductionPerPayday: 600,
   });
+
+  await expectRejected(
+    "disapproving without a reason is refused",
+    session.c1.mutation(api.applications.castDecision, {
+      applicationId: secondId,
+      decision: "rejected",
+    }),
+    "reason",
+  );
+  await expectRejected(
+    "a blank reason is refused too",
+    session.c1.mutation(api.applications.castDecision, {
+      applicationId: secondId,
+      decision: "rejected",
+      remarks: "   ",
+    }),
+    "reason",
+  );
 
   await session.c1.mutation(api.applications.castDecision, {
     applicationId: secondId,

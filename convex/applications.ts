@@ -1,4 +1,5 @@
 import { ConvexError, v } from "convex/values";
+import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import {
@@ -9,7 +10,7 @@ import {
   treasurerMutation,
   STAFF_ROLES,
 } from "./lib/auth";
-import { TERM_MONTHS, validateLoanTerms } from "./lib/loan";
+import { TERM_MONTHS, formatPeso, roleTitle, validateLoanTerms } from "./lib/loan";
 import { nextQueueNumber } from "./lib/queue";
 import { decisionValidator, loanTypeValidator } from "./schema";
 
@@ -83,7 +84,7 @@ export const submit = memberMutation({
     // Allocated in this same transaction so a failure cannot burn a number.
     const { year, seq, queueNumber } = await nextQueueNumber(ctx, now);
 
-    return await ctx.db.insert("applications", {
+    const applicationId = await ctx.db.insert("applications", {
       queueNumber,
       year,
       seq,
@@ -98,6 +99,14 @@ export const submit = memberMutation({
       dateFiled: now, // frozen at submission, never recomputed
       status: "pending",
     });
+
+    // Scheduled, not awaited: mail cannot reach the network from a mutation,
+    // and a mail outage must never stop a loan being filed.
+    await ctx.scheduler.runAfter(0, internal.notify.applicationFiled, {
+      applicationId,
+    });
+
+    return applicationId;
   },
 });
 
@@ -118,6 +127,16 @@ export const castDecision = approverMutation({
     }
 
     const role = ctx.member.role as "committee1" | "committee2" | "chair";
+
+    // A disapproval ends the application, so the borrower is owed a reason.
+    // Enforced here rather than only in the form: the rule should hold for any
+    // caller, and the printed record is worthless without it.
+    const remarks = args.remarks?.trim() ?? "";
+    if (args.decision === "rejected" && remarks === "") {
+      throw new ConvexError(
+        "Give a reason for disapproving. The borrower is told why.",
+      );
+    }
 
     // 1. Stage gate — the chair only sees it after both committee members pass.
     if (role === "chair") {
@@ -148,9 +167,19 @@ export const castDecision = approverMutation({
       approverMemberId: ctx.member._id,
       approverRole: role,
       decision: args.decision,
-      remarks: args.remarks,
+      remarks: remarks === "" ? undefined : remarks,
       decidedAt: now,
     });
+
+    const announce = (nowWith: "committee" | "chair" | "treasurer" | "nobody") =>
+      ctx.scheduler.runAfter(0, internal.notify.decisionRecorded, {
+        applicationId: app._id,
+        decision: args.decision,
+        approverName: fullName(ctx.member),
+        approverTitle: roleTitle(role),
+        remarks: remarks === "" ? undefined : remarks,
+        nowWith,
+      });
 
     // 3. A rejection is terminal and skips every remaining approver.
     if (args.decision === "rejected") {
@@ -159,6 +188,7 @@ export const castDecision = approverMutation({
         outcome: "rejected",
         archivedAt: now,
       });
+      await announce("nobody");
       return;
     }
 
@@ -169,6 +199,7 @@ export const castDecision = approverMutation({
         status: "approved",
         startDate: app.startDate ?? now,
       });
+      await announce("treasurer");
       return;
     }
 
@@ -185,6 +216,9 @@ export const castDecision = approverMutation({
     );
     if (approvedRoles.has("committee1") && approvedRoles.has("committee2")) {
       await ctx.db.patch(app._id, { status: "chair_review" });
+      await announce("chair");
+    } else {
+      await announce("committee");
     }
   },
 });
@@ -215,6 +249,17 @@ export const recordRelease = treasurerMutation({
       releasedAmount: args.releasedAmount,
       releasedByMemberId: ctx.member._id,
       archivedAt: Date.now(),
+    });
+
+    await ctx.scheduler.runAfter(0, internal.notify.loanReleased, {
+      applicationId: app._id,
+      releasedAmount: formatPeso(args.releasedAmount),
+      releasedOn: new Date(args.releasedAt).toLocaleDateString("en-PH", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
     });
   },
 });

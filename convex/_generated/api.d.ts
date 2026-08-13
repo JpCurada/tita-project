@@ -16,6 +16,8 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_loan from "../lib/loan.js";
 import type * as lib_queue from "../lib/queue.js";
 import type * as members from "../members.js";
+import type * as notifications from "../notifications.js";
+import type * as notify from "../notify.js";
 import type * as testing from "../testing.js";
 
 import type {
@@ -33,6 +35,8 @@ declare const fullApi: ApiFromModules<{
   "lib/loan": typeof lib_loan;
   "lib/queue": typeof lib_queue;
   members: typeof members;
+  notifications: typeof notifications;
+  notify: typeof notify;
   testing: typeof testing;
 }>;
 

@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Spinner } from "@/components/Spinner";
 import { errorMessage } from "@/lib/format";
 
-type Flow = "signIn" | "signUp" | "forgot" | "reset";
+type Flow = "signIn" | "signUp" | "forgot" | "code" | "reset";
 
 export default function SignInPage() {
   const { signIn } = useAuthActions();
@@ -17,6 +17,9 @@ export default function SignInPage() {
 
   const [flow, setFlow] = useState<Flow>("signIn");
   const [email, setEmail] = useState("");
+  // The code is held here between the two reset steps, so the member types it
+  // once even if the new password is rejected and they have to try again.
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -27,22 +30,54 @@ export default function SignInPage() {
     setNotice(null);
   }
 
+  /**
+   * Step one of the reset. The code is only checked for shape here — Convex
+   * Auth verifies and consumes it in the same call that sets the password, and
+   * a separate "is this code right?" endpoint would let anyone guess codes
+   * without limit. A wrong code surfaces on the final step and sends the
+   * member back here with what they typed still in place.
+   */
+  function handleCodeStep(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const entered = String(
+      new FormData(event.currentTarget).get("code") ?? "",
+    ).replace(/\s/g, "");
+
+    if (!/^\d{8}$/.test(entered)) {
+      setError("That code should be the eight digits from your email.");
+      return;
+    }
+    setCode(entered);
+    go("reset");
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setNotice(null);
-    setSubmitting(true);
 
     const form = new FormData(event.currentTarget);
     const address = String(form.get("email") ?? email).trim().toLowerCase();
     form.set("email", address);
 
+    if (flow === "reset") {
+      const next = String(form.get("newPassword") ?? "");
+      if (next !== String(form.get("confirmPassword") ?? "")) {
+        setError("The two passwords do not match.");
+        return;
+      }
+      form.delete("confirmPassword");
+      form.set("code", code);
+    }
+
+    setSubmitting(true);
     try {
       if (flow === "forgot") {
         form.set("flow", "reset");
         await signIn("password", form);
         setEmail(address);
-        setFlow("reset");
+        setCode("");
+        setFlow("code");
         setNotice(`We sent a code to ${address}. It is good for one hour.`);
       } else if (flow === "reset") {
         form.set("flow", "reset-verification");
@@ -56,7 +91,13 @@ export default function SignInPage() {
         return;
       }
     } catch (caught) {
-      setError(messageFor(flow, caught));
+      if (flow === "reset") {
+        // The only thing the server can reject at this point is the code.
+        setFlow("code");
+        setError("That code is wrong or has expired. Check it and try again.");
+      } else {
+        setError(messageFor(flow, caught));
+      }
     }
     setSubmitting(false);
   }
@@ -65,15 +106,6 @@ export default function SignInPage() {
     <main className="min-h-screen lg:grid lg:grid-cols-2">
       {/* Left: what this is. Fills its half rather than floating in a column. */}
       <section className="relative hidden flex-col justify-between overflow-hidden bg-ink px-12 py-14 text-leaf lg:flex">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(180deg, transparent 0 31px, #FBFAF6 31px 32px)",
-          }}
-        />
-
         <div className="relative">
           <Image src="/pit-logo.png" alt="" width={64} height={64} priority />
           <p className="eyebrow mt-7 text-leaf/55">
@@ -140,24 +172,33 @@ export default function SignInPage() {
             {HEADINGS[flow].blurb}
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-            {flow === "reset" ? (
+          <form
+            onSubmit={flow === "code" ? handleCodeStep : handleSubmit}
+            className="mt-7 space-y-5"
+          >
+            {flow === "code" ? (
+              <div>
+                <label className="label" htmlFor="code">
+                  Code from your email
+                </label>
+                <input
+                  id="code"
+                  name="code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={8}
+                  required
+                  autoFocus
+                  defaultValue={code}
+                  placeholder="00000000"
+                  className="input tnum text-center font-mono text-xl tracking-[0.35em]"
+                />
+                <p className="mt-2.5 text-xs text-ink-faint">
+                  Eight digits, sent to {email}.
+                </p>
+              </div>
+            ) : flow === "reset" ? (
               <>
-                <div>
-                  <label className="label" htmlFor="code">
-                    Code from your email
-                  </label>
-                  <input
-                    id="code"
-                    name="code"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    required
-                    autoFocus
-                    placeholder="00000000"
-                    className="input tnum text-center font-mono text-lg tracking-[0.3em]"
-                  />
-                </div>
                 <input type="hidden" name="email" value={email} />
                 <PasswordField
                   label="New password"
@@ -165,6 +206,12 @@ export default function SignInPage() {
                   autoComplete="new-password"
                   minLength={8}
                   hint="At least 8 characters."
+                />
+                <PasswordField
+                  label="Confirm new password"
+                  name="confirmPassword"
+                  autoComplete="new-password"
+                  minLength={8}
                 />
               </>
             ) : (
@@ -258,9 +305,22 @@ export default function SignInPage() {
                 </button>
               </>
             )}
-            {(flow === "forgot" || flow === "reset") && (
+            {flow === "forgot" && (
               <button className="btn-quiet" onClick={() => go("signIn")}>
                 Back to sign in
+              </button>
+            )}
+            {flow === "code" && (
+              <>
+                Did not get it?{" "}
+                <button className="btn-quiet" onClick={() => go("forgot")}>
+                  Send another code
+                </button>
+              </>
+            )}
+            {flow === "reset" && (
+              <button className="btn-quiet" onClick={() => go("code")}>
+                Back to the code
               </button>
             )}
           </p>
@@ -295,9 +355,15 @@ const HEADINGS: Record<
     action: "Send the code",
     busy: "Sending",
   },
+  code: {
+    title: "Enter your code",
+    blurb: "Check your email for the eight-digit code we just sent.",
+    action: "Continue",
+    busy: "Checking",
+  },
   reset: {
     title: "Choose a new password",
-    blurb: "Enter the code from your email, then pick a new password.",
+    blurb: "Pick a new password for your account.",
     action: "Save new password",
     busy: "Saving",
   },

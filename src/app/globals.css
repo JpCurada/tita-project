@@ -9,12 +9,6 @@
 
   body {
     @apply bg-bond text-ink antialiased;
-    /* Faint laid-paper tooth. Invisible until you look for it. */
-    background-image: repeating-linear-gradient(
-      180deg,
-      transparent 0 27px,
-      rgba(23, 22, 20, 0.016) 27px 28px
-    );
   }
 
   /* Poppins is geometric; a touch of negative tracking stops headings from

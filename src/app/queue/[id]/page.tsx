@@ -78,14 +78,18 @@ export default function ReviewPage() {
               <div className="mt-5 max-w-xl space-y-5">
                 <div>
                   <label className="label" htmlFor="remarks">
-                    Remarks — optional, recorded permanently
+                    Remarks
+                    <span className="font-normal text-ink-faint">
+                      {" "}
+                      — required to disapprove, recorded permanently
+                    </span>
                   </label>
                   <textarea
                     id="remarks"
                     className="input min-h-20 resize-y"
                     value={remarks}
                     onChange={(event) => setRemarks(event.target.value)}
-                    placeholder="A note to accompany your decision"
+                    placeholder="Why this loan is being approved or turned down"
                   />
                 </div>
 
@@ -107,7 +111,17 @@ export default function ReviewPage() {
                   </button>
                   <button
                     className="btn-danger"
-                    onClick={() => setConfirming("rejected")}
+                    onClick={() => {
+                      // The borrower is told why, so there has to be a why.
+                      if (remarks.trim() === "") {
+                        setError(
+                          "Give a reason above before disapproving. The borrower is told why.",
+                        );
+                        return;
+                      }
+                      setError(null);
+                      setConfirming("rejected");
+                    }}
                   >
                     Disapprove
                   </button>
@@ -170,8 +184,8 @@ export default function ReviewPage() {
         </p>
         <p className="mt-2.5">
           {confirming === "rejected"
-            ? "This ends the application immediately — the remaining approvers will not be asked. It cannot be undone."
-            : "Your name is recorded against this decision permanently. It cannot be changed."}
+            ? "This ends the application immediately — the remaining approvers will not be asked. The borrower is emailed your reason. It cannot be undone."
+            : "Your name is recorded against this decision permanently, and the borrower is emailed. It cannot be changed."}
         </p>
         {remarks.trim() !== "" && (
           <p className="mt-3 border-l-2 border-rule-strong pl-3 italic">
