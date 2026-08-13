@@ -15,6 +15,43 @@ import { roleTitle } from "@/lib/format";
 
 const STAFF_ROLES = ["committee1", "committee2", "chair", "treasurer"];
 
+/**
+ * A tab in the header. The current page is marked by an underline drawn on the
+ * header's own bottom rule, so the tab reads as the front of the page beneath
+ * it rather than as a highlighted button.
+ */
+function NavLink({
+  href,
+  label,
+  pathname,
+  compact = false,
+}: {
+  href: string;
+  label: string;
+  pathname: string;
+  compact?: boolean;
+}) {
+  const active = pathname === href || pathname.startsWith(`${href}/`);
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`relative flex items-center whitespace-nowrap rounded-t-md text-sm
+                  transition-colors duration-150
+                  ${compact ? "px-3 py-2.5" : "px-3.5"}
+                  after:absolute after:inset-x-2 after:bottom-0 after:h-0.5
+                  after:rounded-full after:transition-colors after:duration-150
+                  ${
+                    active
+                      ? "font-semibold text-ink after:bg-viridian"
+                      : "text-ink-pencil hover:bg-black/[0.03] hover:text-ink after:bg-transparent"
+                  }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const member = useQuery(api.members.getCurrentMember);
   const claimProfile = useMutation(api.members.claimProfile);
@@ -47,9 +84,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-screen flex-col">
         <div className="border-b border-rule-strong bg-leaf">
-          <div className="mx-auto flex max-w-4xl items-center gap-2.5 px-5 py-4">
-            <Image src="/pit-logo.png" alt="" width={34} height={34} priority />
-            <div className="skeleton h-8 w-52" />
+          <div className="flex h-14 items-center gap-2.5 px-4 sm:px-6 lg:px-8">
+            <Image src="/pit-logo.png" alt="" width={30} height={30} priority />
+            <div className="skeleton h-7 w-48" />
+            <div className="skeleton ml-auto h-7 w-24" />
           </div>
         </div>
         <div className="mx-auto w-full max-w-4xl flex-1 px-5 py-9">
@@ -78,30 +116,31 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-rule-strong bg-leaf">
-        <div className="mx-auto max-w-4xl px-5">
-          {/* Masthead. On a phone the institute line is dropped and the title
-              shortened: the header should not eat a fifth of a small screen. */}
-          <div className="flex items-center justify-between gap-3 pt-3.5">
+      {/* The bar runs the full width of the window and its contents sit at the
+          window's own edges. Boxing the header to the content column left it
+          stranded in the middle of a bar that already spanned everything. */}
+      <header className="sticky top-0 z-30 border-b border-rule-strong bg-leaf/95 backdrop-blur">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex h-14 items-center gap-4">
             <Link
               href="/dashboard"
-              className="group flex min-w-0 items-center gap-2.5"
+              className="group flex shrink-0 items-center gap-2.5"
             >
               <Image
                 src="/pit-logo.png"
                 alt=""
-                width={32}
-                height={32}
+                width={30}
+                height={30}
                 className="shrink-0"
                 priority
               />
-              <span className="min-w-0">
-                <span className="eyebrow hidden text-ink-faint sm:block">
+              <span className="min-w-0 leading-tight">
+                <span className="eyebrow hidden text-ink-faint lg:block">
                   Palompon Institute of Technology
                 </span>
                 <span className="block truncate font-display text-[0.9375rem] font-semibold text-ink transition-colors group-hover:text-viridian">
-                  <span className="sm:hidden">PIT Faculty Association</span>
-                  <span className="hidden sm:inline">
+                  <span className="lg:hidden">PIT Faculty Association</span>
+                  <span className="hidden lg:inline">
                     Faculty Association
                     <span className="font-normal text-ink-faint">
                       {" · "}Loan Committee
@@ -111,15 +150,23 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             </Link>
 
-            <div className="flex shrink-0 items-center gap-4">
-              <span className="hidden text-right sm:block">
-                <span className="block text-sm leading-tight">{member.name}</span>
+            {/* Tabs sit beside the mark on a wide screen and drop to their own
+                row below it on a narrow one, so neither ever truncates. */}
+            <nav className="hidden h-full flex-1 items-stretch gap-1 md:flex">
+              {links.map((link) => (
+                <NavLink key={link.href} {...link} pathname={pathname} />
+              ))}
+            </nav>
+
+            <div className="ml-auto flex shrink-0 items-center gap-3 md:ml-0">
+              <span className="hidden text-right leading-tight sm:block">
+                <span className="block text-sm font-medium">{member.name}</span>
                 <span className="eyebrow block text-ink-faint">
                   {roleTitle(member.role)}
                 </span>
               </span>
               <button
-                className="btn-quiet whitespace-nowrap"
+                className="btn-secondary px-3 py-1.5 text-xs"
                 onClick={() => setConfirmingSignOut(true)}
               >
                 Sign out
@@ -127,26 +174,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Tabs sit on the rule, like index tabs on a ledger. */}
-          <nav className="-mb-px flex gap-6 overflow-x-auto pt-4">
-            {links.map((link) => {
-              const active =
-                pathname === link.href || pathname.startsWith(`${link.href}/`);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`whitespace-nowrap border-b-2 pb-2 text-sm transition-colors ${
-                    active
-                      ? "border-viridian font-medium text-ink"
-                      : "border-transparent text-ink-pencil hover:border-rule-strong hover:text-ink"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
+          <nav className="-mx-1 flex items-stretch gap-1 overflow-x-auto border-t border-rule md:hidden">
+            {links.map((link) => (
+              <NavLink key={link.href} {...link} pathname={pathname} compact />
+            ))}
           </nav>
         </div>
       </header>
