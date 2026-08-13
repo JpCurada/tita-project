@@ -5,7 +5,11 @@
  * exactly as the browser would — so the role wrappers, the state machine and
  * the queue counter are all exercised for real, not mocked.
  *
- *   node scripts/verify.mjs
+ *   node scripts/verify.mjs --wipe
+ *
+ * DESTRUCTIVE. Every member, application and approval on the target deployment
+ * is deleted before the run, so `--wipe` is required to say you meant it. Run
+ * `node scripts/seed.mjs --reset` afterwards to put the roster back.
  */
 import { ConvexClient } from "convex/browser";
 import { api } from "../convex/_generated/api.js";
@@ -16,6 +20,27 @@ import { execFileSync } from "node:child_process";
 const env = readFileSync(new URL("../.env.local", import.meta.url), "utf8");
 const url = /NEXT_PUBLIC_CONVEX_URL=(.+)/.exec(env)?.[1].trim();
 if (!url) throw new Error("NEXT_PUBLIC_CONVEX_URL missing from .env.local");
+
+// Deleting the roster is the first thing this script does, and the loss is not
+// obvious afterwards — the app still signs you in, then reports no membership.
+// So the wipe has to be asked for, and never on production.
+const deployment = /CONVEX_DEPLOYMENT=(.+)/.exec(env)?.[1].trim() ?? "";
+if (!deployment.startsWith("dev:")) {
+  console.error(
+    `Refusing to run: ${deployment || "this deployment"} is not a dev deployment.\n` +
+      "This script deletes all members, applications and approvals.",
+  );
+  process.exit(1);
+}
+if (!process.argv.includes("--wipe")) {
+  console.error(
+    "This deletes every member, application and approval on " +
+      `${deployment}.\n` +
+      "Re-run with --wipe if that is what you want, then restore the roster:\n" +
+      "  node scripts/verify.mjs --wipe && node scripts/seed.mjs --reset",
+  );
+  process.exit(1);
+}
 
 /**
  * `internal*` functions are deliberately unreachable from any client — that is
