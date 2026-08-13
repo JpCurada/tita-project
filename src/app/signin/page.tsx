@@ -11,6 +11,14 @@ import { toUserMessage } from "@/lib/errors";
 
 type Flow = "signIn" | "signUp" | "verify" | "forgot" | "code" | "reset";
 
+/**
+ * Whether this deployment can send mail. Resend refuses every recipient until a
+ * domain is verified, and offering "Forgot password?" before then sends people
+ * down a path that cannot work. Defaults to on; set
+ * NEXT_PUBLIC_EMAIL_ENABLED=false to hide it.
+ */
+const EMAIL_ENABLED = process.env.NEXT_PUBLIC_EMAIL_ENABLED !== "false";
+
 export default function SignInPage() {
   const { signIn } = useAuthActions();
   const router = useRouter();
@@ -280,7 +288,7 @@ export default function SignInPage() {
                   <div>
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="label mb-0">Password</span>
-                      {flow === "signIn" && (
+                      {flow === "signIn" && EMAIL_ENABLED && (
                         <button
                           type="button"
                           className="btn-quiet text-xs"
@@ -330,6 +338,13 @@ export default function SignInPage() {
               {submitting ? HEADINGS[flow].busy : HEADINGS[flow].action}
             </button>
           </form>
+
+          {flow === "signIn" && !EMAIL_ENABLED && (
+            <p className="mt-4 text-center text-xs leading-relaxed text-ink-faint">
+              Forgotten your password? Ask the Chair of the Loan Committee to
+              set a new one for you.
+            </p>
+          )}
 
           <p className="mt-6 text-center text-sm text-ink-pencil">
             {flow === "signIn" && (

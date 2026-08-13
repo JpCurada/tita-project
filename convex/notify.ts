@@ -38,9 +38,22 @@ async function send(
     subject,
     text: [...lines, "", "— PIT Faculty Association, Loan Committee"].join("\n"),
   });
+
   if (error !== null) {
-    // Thrown so the failure shows in the Convex logs; the scheduler retries.
-    throw new Error(`Resend refused "${subject}": ${JSON.stringify(error)}`);
+    const detail = JSON.stringify(error);
+    // Resend refuses unknown recipients until a domain is verified. Retrying
+    // will never succeed, so log it once and let the loan carry on — the queue
+    // and dashboard already show everything these messages would have said.
+    if (/only send testing emails|invalid `?to`? field|not verified/i.test(detail)) {
+      console.warn(
+        `Email is not configured, so "${subject}" was not sent to ` +
+          `${recipients.join(", ")}. Verify a domain at resend.com/domains ` +
+          `and set AUTH_EMAIL_FROM to enable notifications.`,
+      );
+      return;
+    }
+    // A genuine outage. Thrown so the scheduler retries.
+    throw new Error(`Resend refused "${subject}": ${detail}`);
   }
 }
 
