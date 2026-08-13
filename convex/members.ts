@@ -73,6 +73,95 @@ export const claimProfile = mutation({
   },
 });
 
+/**
+ * Creates the signed-in user's own membership.
+ *
+ * Members register themselves rather than waiting for the chair, so this is the
+ * only path that writes a `members` row without chair authority. It is
+ * deliberately narrow: it always writes `role: "member"`, so nobody can hand
+ * themselves a committee seat, and it refuses if a profile already exists.
+ *
+ * Permanent status is self-declared. The committee sees it on every application
+ * and can turn one down if it is wrong — the same check that happened on paper.
+ */
+export const registerSelf = mutation({
+  args: {
+    firstName: v.string(),
+    middleName: v.optional(v.string()),
+    lastName: v.string(),
+    employeeNo: v.string(),
+    position: v.optional(v.string()),
+    isPermanent: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new ConvexError("Not authenticated.");
+    }
+
+    const already = await ctx.db
+      .query("members")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (already !== null) {
+      return already._id;
+    }
+
+    const user = await ctx.db.get(userId);
+    const email = typeof user?.email === "string" ? user.email.toLowerCase() : "";
+    if (email === "") {
+      throw new ConvexError("This account has no email address.");
+    }
+
+    const firstName = args.firstName.trim();
+    const lastName = args.lastName.trim();
+    const employeeNo = args.employeeNo.trim();
+    if (firstName === "" || lastName === "") {
+      throw new ConvexError("Enter your first and last name.");
+    }
+    if (employeeNo === "") {
+      throw new ConvexError("Enter your employee number.");
+    }
+
+    // A profile the chair pre-created for this address wins: claim it rather
+    // than making a second one, so any committee seat on it is preserved.
+    const byEmail = await ctx.db
+      .query("members")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .unique();
+    if (byEmail !== null) {
+      if (byEmail.userId === undefined) {
+        await ctx.db.patch(byEmail._id, { userId });
+        return byEmail._id;
+      }
+      throw new ConvexError("That email address is already registered.");
+    }
+
+    const byEmployeeNo = await ctx.db
+      .query("members")
+      .withIndex("by_employeeNo", (q) => q.eq("employeeNo", employeeNo))
+      .unique();
+    if (byEmployeeNo !== null) {
+      throw new ConvexError(
+        "That employee number is already registered. Ask the chair if you think this is a mistake.",
+      );
+    }
+
+    return await ctx.db.insert("members", {
+      userId,
+      employeeNo,
+      firstName,
+      middleName: args.middleName?.trim() || undefined,
+      lastName,
+      email,
+      position: args.position?.trim() || undefined,
+      isPermanent: args.isPermanent,
+      role: "member", // never anything else from this path
+      active: true,
+    });
+  },
+});
+
 export const list = chairQuery({
   args: {},
   handler: async (ctx) => {

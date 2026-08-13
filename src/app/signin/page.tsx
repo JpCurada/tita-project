@@ -7,9 +7,9 @@ import { useState } from "react";
 import { PasswordField } from "@/components/PasswordField";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Spinner } from "@/components/Spinner";
-import { errorMessage } from "@/lib/format";
+import { toUserMessage } from "@/lib/errors";
 
-type Flow = "signIn" | "signUp" | "forgot" | "code" | "reset";
+type Flow = "signIn" | "signUp" | "verify" | "forgot" | "code" | "reset";
 
 export default function SignInPage() {
   const { signIn } = useAuthActions();
@@ -81,6 +81,20 @@ export default function SignInPage() {
         setNotice(`We sent a code to ${address}. It is good for one hour.`);
       } else if (flow === "reset") {
         form.set("flow", "reset-verification");
+        await signIn("password", form);
+        router.push("/dashboard");
+        return;
+      } else if (flow === "signUp") {
+        form.set("flow", "signUp");
+        await signIn("password", form);
+        setEmail(address);
+        setFlow("verify");
+        setNotice(
+          `We sent a confirmation code to ${address}. It is good for one hour.`,
+        );
+      } else if (flow === "verify") {
+        form.set("flow", "email-verification");
+        form.set("email", email);
         await signIn("password", form);
         router.push("/dashboard");
         return;
@@ -176,7 +190,7 @@ export default function SignInPage() {
             onSubmit={flow === "code" ? handleCodeStep : handleSubmit}
             className="mt-7 space-y-5"
           >
-            {flow === "code" ? (
+            {flow === "code" || flow === "verify" ? (
               <div>
                 <label className="label" htmlFor="code">
                   Code from your email
@@ -310,6 +324,14 @@ export default function SignInPage() {
                 Back to sign in
               </button>
             )}
+            {flow === "verify" && (
+              <>
+                Wrong address?{" "}
+                <button className="btn-quiet" onClick={() => go("signUp")}>
+                  Start again
+                </button>
+              </>
+            )}
             {flow === "code" && (
               <>
                 Did not get it?{" "}
@@ -355,6 +377,12 @@ const HEADINGS: Record<
     action: "Send the code",
     busy: "Sending",
   },
+  verify: {
+    title: "Confirm your email",
+    blurb: "We sent a code to your address. Enter it to finish setting up.",
+    action: "Confirm email",
+    busy: "Confirming",
+  },
   code: {
     title: "Enter your code",
     blurb: "Check your email for the eight-digit code we just sent.",
@@ -369,16 +397,33 @@ const HEADINGS: Record<
   },
 };
 
-/** Errors here should say what to do, not repeat what the server threw. */
+/**
+ * Errors here should say what to do next. `toUserMessage` recognises the known
+ * causes (an address already taken, a bad code, a mail failure); the fallback
+ * only supplies context when it does not, rather than overriding a message that
+ * was already specific.
+ */
 function messageFor(flow: Flow, caught: unknown): string {
-  if (flow === "signIn") {
-    return "That email and password do not match. Check for typos, or reset your password.";
+  switch (flow) {
+    case "signIn":
+      return toUserMessage(
+        caught,
+        "That email and password do not match. Check for typos, or reset your password.",
+      );
+    case "signUp":
+      return toUserMessage(
+        caught,
+        "We could not create that account. Check the address and try again.",
+      );
+    case "forgot":
+      return toUserMessage(
+        caught,
+        "We could not send the code. Check the address and try again.",
+      );
+    default:
+      return toUserMessage(
+        caught,
+        "That code is wrong or has expired. Ask for a new one and try again.",
+      );
   }
-  if (flow === "forgot") {
-    return "We could not send the code. Check the address and try again.";
-  }
-  if (flow === "reset") {
-    return "That code is wrong or has expired. Ask for a new one and try again.";
-  }
-  return errorMessage(caught);
 }

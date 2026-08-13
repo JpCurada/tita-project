@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "@convex/_generated/api";
+import { CompleteProfile } from "@/components/CompleteProfile";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SkeletonPage } from "@/components/Skeleton";
@@ -60,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   if (member === null) {
-    return <NotLinked onSignOut={() => void leave()} />;
+    return <CompleteProfile onSignOut={() => void leave()} />;
   }
 
   const isStaff = STAFF_ROLES.includes(member.role);
@@ -168,28 +169,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         You will need your email and password to get back in. Nothing you have
         filed is lost.
       </ConfirmDialog>
-    </div>
-  );
-}
-
-function NotLinked({ onSignOut }: { onSignOut: () => void }) {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex flex-1 items-center justify-center px-5 py-12">
-      <div className="leaf max-w-md p-8">
-        <span className="eyebrow">Membership</span>
-        <h1 className="section-title mt-2">This account is not on the roll yet</h1>
-        <p className="mt-3 text-sm leading-relaxed text-ink-pencil">
-          Your sign-in works. No faculty association membership is linked to this
-          email address, so there is nothing to show you yet. Ask the Chair of
-          the Loan Committee to add you, then sign in again.
-        </p>
-        <button className="btn-secondary mt-6" onClick={onSignOut}>
-          Sign out
-        </button>
-      </div>
-      </main>
-      <SiteFooter />
     </div>
   );
 }

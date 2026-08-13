@@ -64,12 +64,4 @@ export function statusLabel(
   }
 }
 
-/** Convex throws ConvexError with a string payload; surface it verbatim. */
-export function errorMessage(error: unknown): string {
-  if (error !== null && typeof error === "object" && "data" in error) {
-    const data = (error as { data: unknown }).data;
-    if (typeof data === "string") return data;
-  }
-  if (error instanceof Error) return error.message;
-  return "Something went wrong. Please try again.";
-}
+export { toUserMessage as errorMessage } from "@/lib/errors";

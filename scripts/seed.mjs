@@ -1,12 +1,12 @@
 /**
- * Seeds a working association: a chair, the two committee members, a
- * treasurer, and ordinary members — plus loans at each stage of the flow.
+ * Seeds a working association: two committee members, a chair who is also the
+ * treasurer, and a borrower — plus loans at each stage of the flow.
  *
  *   node scripts/seed.mjs                 # keeps existing data
  *   node scripts/seed.mjs --reset         # wipes first
  *
- * Everything goes through the public API, so the seeded state is reachable
- * the same way the app would produce it.
+ * Everything goes through the public API, so the seeded state is reachable the
+ * same way the app would produce it.
  */
 import { ConvexClient } from "convex/browser";
 import { api } from "../convex/_generated/api.js";
@@ -65,18 +65,15 @@ if (process.argv.includes("--reset")) {
   run("testing:reset");
 }
 
-// The real account, as chair. Everyone else is fictional but plausible for a
-// provincial state college faculty association.
+/**
+ * The committee holds two seats and a chair. Guanzon chairs the committee and
+ * keeps the association's funds, so he also records releases — the release
+ * mutation already accepts the chair in the treasurer's stead.
+ *
+ * The seats are stored as committee1 and committee2 so the system can tell the
+ * two decisions on a loan apart; neither is shown as numbered anywhere.
+ */
 const ROSTER = [
-  {
-    key: "chair",
-    firstName: "John Paul",
-    lastName: "Curada",
-    email: "johncurada.02@gmail.com",
-    employeeNo: "2019-0142",
-    position: "Instructor I, College of Computer Studies",
-    role: "chair",
-  },
   {
     key: "c1",
     firstName: "Geryl",
@@ -98,14 +95,14 @@ const ROSTER = [
     role: "committee2",
   },
   {
-    key: "treasurer",
+    key: "chair",
     firstName: "Sansino Rian",
     middleName: "C.",
     lastName: "Guanzon",
     email: "s.guanzon@pit.edu.ph",
     employeeNo: "2009-0054",
     position: "Professor I, College of Arts and Sciences",
-    role: "treasurer",
+    role: "chair",
   },
   {
     key: "elena",
@@ -116,37 +113,6 @@ const ROSTER = [
     employeeNo: "2016-0198",
     position: "Instructor III, College of Education",
     role: "member",
-  },
-  {
-    key: "ramon",
-    firstName: "Ramon",
-    middleName: "V.",
-    lastName: "Villanueva",
-    email: "r.villanueva@pit.edu.ph",
-    employeeNo: "2014-0163",
-    position: "Assistant Professor I, College of Engineering",
-    role: "member",
-  },
-  {
-    key: "teresita",
-    firstName: "Teresita",
-    middleName: "O.",
-    lastName: "Ocampo",
-    email: "t.ocampo@pit.edu.ph",
-    employeeNo: "2008-0031",
-    position: "Professor II, College of Computer Studies",
-    role: "member",
-  },
-  {
-    key: "marisol",
-    firstName: "Marisol",
-    middleName: "P.",
-    lastName: "Delgado",
-    email: "m.delgado@pit.edu.ph",
-    employeeNo: "2021-0276",
-    position: "Instructor I, College of Arts and Sciences",
-    role: "member",
-    isPermanent: false, // probationary: cannot stand as co-maker
   },
 ];
 
@@ -183,10 +149,15 @@ async function coMaker(client, surname) {
 
 console.log("Filing loans…");
 
-// 1. Fully settled: approved all the way and released.
+/**
+ * A member may hold only one open loan, so each borrower's earlier loan is
+ * carried to a terminal state before the next is filed.
+ */
+
+// 1. Elena: approved all the way, then released. Lands in the archive.
 {
-  const id = await session.teresita.mutation(api.applications.submit, {
-    coMakerMemberId: await coMaker(session.teresita, "Villanueva"),
+  const id = await session.elena.mutation(api.applications.submit, {
+    coMakerMemberId: await coMaker(session.elena, "Cataraja"),
     loanType: "regular",
     loanAmount: 18000,
     deductionPerPayday: 1800,
@@ -204,18 +175,19 @@ console.log("Filing loans…");
     applicationId: id,
     decision: "approved",
   });
-  await session.treasurer.mutation(api.applications.recordRelease, {
+  // The chair records the release, wearing the treasurer's hat.
+  await session.chair.mutation(api.applications.recordRelease, {
     applicationId: id,
     releasedAmount: 18000,
     releasedAt: Date.now() - 86_400_000 * 12,
   });
-  console.log("  released — Teresita Ocampo");
+  console.log("  released — Elena Bautista");
 }
 
-// 2. Disapproved at the committee stage.
+// 2. Elena again: disapproved by the committee. Also archived.
 {
-  const id = await session.ramon.mutation(api.applications.submit, {
-    coMakerMemberId: await coMaker(session.ramon, "Bautista"),
+  const id = await session.elena.mutation(api.applications.submit, {
+    coMakerMemberId: await coMaker(session.elena, "Sanico"),
     loanType: "emergency",
     loanAmount: 12000,
     deductionPerPayday: 1200,
@@ -225,13 +197,14 @@ console.log("Filing loans…");
     decision: "rejected",
     remarks: "Co-maker already stands on two active loans.",
   });
-  console.log("  disapproved — Ramon Villanueva");
+  console.log("  disapproved — Elena Bautista");
 }
 
-// 3. Waiting on the chair: both committee members have approved.
+// 3. Cataraja's own loan, sitting with the chair: the committee has passed it.
+//    A committee member may borrow; they simply cannot decide on their own loan.
 {
-  const id = await session.elena.mutation(api.applications.submit, {
-    coMakerMemberId: await coMaker(session.elena, "Ocampo"),
+  const id = await session.c1.mutation(api.applications.submit, {
+    coMakerMemberId: await coMaker(session.c1, "Sanico"),
     loanType: "regular",
     loanAmount: 12000,
     deductionPerPayday: 1200,
@@ -245,30 +218,29 @@ console.log("Filing loans…");
     decision: "approved",
     remarks: "Verified with the payroll office.",
   });
-  console.log("  with the chair — Elena Bautista");
+  console.log("  with the chair — Geryl Cataraja");
 }
 
-// 4. Fresh: nobody has decided yet, so the committee has something waiting.
+// 4. Fresh, undecided, so the committee has something waiting on them.
 {
-  await session.marisol.mutation(api.applications.submit, {
-    coMakerMemberId: await coMaker(session.marisol, "Villanueva"),
+  await session.c2.mutation(api.applications.submit, {
+    coMakerMemberId: await coMaker(session.c2, "Cataraja"),
     loanType: "regular",
     loanAmount: 6000,
     deductionPerPayday: 600,
   });
-  console.log("  with the committee — Marisol Delgado");
+  console.log("  with the committee — Albert Sanico");
 }
 
 for (const c of clients) await c.close();
 
 console.log(`
-Done. Sign in at http://localhost:3117/signin
+Done. Sign in at http://localhost:3000/signin
 
-  Chair (full access)   johncurada.02@gmail.com
-  Committee Member 1    g.cataraja@pit.edu.ph
-  Committee Member 2    a.sanico@pit.edu.ph
-  Treasurer             s.guanzon@pit.edu.ph
-  Ordinary member       e.bautista@pit.edu.ph
+  Chair, and treasurer   s.guanzon@pit.edu.ph
+  Committee Member       g.cataraja@pit.edu.ph
+  Committee Member       a.sanico@pit.edu.ph
+  Borrower               e.bautista@pit.edu.ph
 
-  Password for all      ${PASSWORD}
+  Password for all       ${PASSWORD}
 `);
