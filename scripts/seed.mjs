@@ -48,14 +48,41 @@ async function account(email) {
 
   const client = new ConvexClient(url);
   clients.push(client);
-  const res = await client.action(api.auth.signIn, {
-    provider: "password",
-    params: { email, password: PASSWORD, flow: "signUp" },
-  });
-  if (!res?.tokens?.token) {
-    throw new Error(`sign-up produced no token for ${email}`);
+
+  /**
+   * With email verification switched on, sign-up sends a code instead of
+   * returning a session — and Resend refuses fictional addresses outright until
+   * the association verifies a domain, so the call throws.
+   *
+   * Either way the account row is created first, so the failure is expected
+   * here: mark it confirmed and sign in normally.
+   */
+  let token;
+  try {
+    const res = await client.action(api.auth.signIn, {
+      provider: "password",
+      params: { email, password: PASSWORD, flow: "signUp" },
+    });
+    token = res?.tokens?.token;
+  } catch (error) {
+    if (!/confirmation email|already exists/i.test(String(error))) {
+      throw error;
+    }
   }
-  client.setAuth(async () => res.tokens.token);
+
+  if (!token) {
+    run("testing:markEmailVerified", { email });
+    const signedIn = await client.action(api.auth.signIn, {
+      provider: "password",
+      params: { email, password: PASSWORD, flow: "signIn" },
+    });
+    token = signedIn?.tokens?.token;
+  }
+  if (!token) {
+    throw new Error(`could not sign in as ${email}`);
+  }
+
+  client.setAuth(async () => token);
   await client.mutation(api.members.claimProfile, {});
   return client;
 }

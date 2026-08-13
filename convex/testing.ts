@@ -103,6 +103,29 @@ export const deleteAuthAccount = internalMutation({
   },
 });
 
+/**
+ * Marks a seeded account's email as already confirmed.
+ *
+ * Seeded people never receive a code — the addresses are fictional, and Resend
+ * will not deliver to them anyway until the association verifies its domain.
+ * Without this the whole roster is locked out the moment email verification is
+ * switched on, which is not a real condition worth reproducing locally.
+ */
+export const markEmailVerified = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const email = args.email.trim().toLowerCase();
+    const accounts = await ctx.db.query("authAccounts").collect();
+    const account = accounts.find(
+      (row) => String(row.providerAccountId).toLowerCase() === email,
+    );
+    if (account === undefined) return `no account for ${email}`;
+
+    await ctx.db.patch(account._id, { emailVerified: new Date().toISOString() });
+    return `verified ${email}`;
+  },
+});
+
 /** Inspector for local debugging: who exists, and is each account linked? */
 export const listMembers = internalQuery({
   args: {},

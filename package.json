@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "dev:all": "convex dev --run-sh \"next dev\"",
-    "build": "next build",
-    "start": "next start",
+    "build": "node scripts/build-local.mjs",
+    "build:ci": "next build",
+    "start": "node scripts/build-local.mjs --start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
