@@ -44,7 +44,7 @@ export function CompleteProfile({ onSignOut }: { onSignOut: () => void }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-white">
       <main className="flex flex-1 items-center justify-center px-5 py-12">
         <div className="rise w-full max-w-lg">
           <div className="text-center">
@@ -56,7 +56,8 @@ export function CompleteProfile({ onSignOut }: { onSignOut: () => void }) {
               className="mx-auto"
               priority
             />
-            <h1 className="page-title mt-4">Tell us who you are</h1>
+            <p className="eyebrow mt-5">PIT Faculty Association</p>
+            <h1 className="page-title mt-2">Tell us who you are</h1>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-pencil">
               These details are printed on your loan form, so they should match
               your records at the Institute.
@@ -79,12 +80,12 @@ export function CompleteProfile({ onSignOut }: { onSignOut: () => void }) {
               />
             </div>
 
-            <label className="mt-6 flex items-start gap-3 rounded-md border border-rule bg-black/[0.015] p-3.5">
+            <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl bg-bond p-4">
               <input
                 type="checkbox"
                 name="isPermanent"
                 defaultChecked
-                className="mt-0.5 h-4 w-4 shrink-0 rounded-none border-rule-strong text-viridian focus:ring-viridian"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-rule-strong accent-[#1a3d8f]"
               />
               <span className="text-sm leading-relaxed">
                 <span className="font-medium">I am in permanent status.</span>
@@ -99,7 +100,7 @@ export function CompleteProfile({ onSignOut }: { onSignOut: () => void }) {
             {error !== null && (
               <p
                 role="alert"
-                className="rise mt-5 rounded-md border-l-2 border-oxide bg-oxide-wash px-3 py-2.5 text-sm leading-relaxed text-oxide"
+                className="rise mt-5 notice-error"
               >
                 {error}
               </p>

@@ -1,5 +1,5 @@
 /**
- * The queue stub — the one form in this interface that is purely of its subject.
+ * The queue stub: the one form in this interface that is purely of its subject.
  *
  * The workbook's whole purpose was to hand a member a loan number, and its
  * VLOOKUP returned #N/A instead. So the number is not a field in a table here;
@@ -37,7 +37,7 @@ export function QueueStub({
 
   return (
     <div
-      className={`relative flex shrink-0 items-stretch border-y border-l ${palette}`}
+      className={`relative flex shrink-0 items-stretch rounded-l-lg border-y border-l ${palette}`}
       aria-label={`${caption} ${queueNumber}`}
     >
       {/* Year, set vertically along the spine like a filing tab. */}

@@ -50,7 +50,7 @@ export default function QueuePage() {
         </p>
       </div>
 
-      <hr className="mt-5 border-rule-strong" />
+      <hr className="mt-6 border-rule" />
 
       {isApprover && (
         <section className="mt-8">
@@ -62,11 +62,11 @@ export default function QueuePage() {
           </div>
 
           {mine.length === 0 ? (
-            <p className="mt-3 border border-dashed border-rule-strong px-5 py-8 text-center text-sm text-ink-pencil">
+            <p className="mt-3 empty-well">
               Nothing is waiting on you.
             </p>
           ) : (
-            <ul className="stagger mt-3 divide-y divide-rule border-y border-rule">
+            <ul className="stagger mt-3 row-list">
               {mine.map((app) => (
                 <Row key={app._id} app={app} emphasis />
               ))}
@@ -80,11 +80,11 @@ export default function QueuePage() {
           {isApprover ? "Elsewhere in the queue" : "In progress"}
         </span>
         {rest.length === 0 ? (
-          <p className="mt-3 border border-dashed border-rule-strong px-5 py-8 text-center text-sm text-ink-pencil">
+          <p className="mt-3 empty-well">
             No other applications are in progress.
           </p>
         ) : (
-          <ul className="stagger mt-3 divide-y divide-rule border-y border-rule">
+          <ul className="stagger mt-3 row-list">
             {rest.map((app) => (
               <Row key={app._id} app={app} />
             ))}
@@ -115,7 +115,7 @@ function Row({
     <li>
       <Link
         href={`/queue/${app._id}`}
-        className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded px-2 py-3.5 transition-colors duration-150 hover:bg-black/[0.025]"
+        className="row-link"
       >
         <QueueStub
           queueNumber={app.queueNumber}

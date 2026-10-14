@@ -85,18 +85,18 @@ export function ApplicationDetail({
         </div>
       </header>
 
-      <hr className="mt-6 border-rule-strong" />
+      <hr className="mt-6 border-rule" />
 
-      {/* Terms, set as a ruled grid — the way the paper form reads. */}
+      {/* Terms, set as a ruled grid: the way the paper form reads. */}
       <section className="mt-7">
         <span className="eyebrow">Terms</span>
-        <dl className="mt-3 grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4">
+        <dl className="mt-3 grid gap-px overflow-hidden rounded-2xl border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4">
           <Cell
             label={claim ? "Claimant" : "Borrower"}
             value={application.borrowerName}
           />
           {!claim && (
-            <Cell label="Co-maker" value={application.coMakerName ?? "—"} />
+            <Cell label="Co-maker" value={application.coMakerName ?? "None"} />
           )}
           <Cell
             label={claim ? "Claim type" : "Loan type"}
@@ -146,7 +146,7 @@ export function ApplicationDetail({
 
       <section className="mt-9">
         <span className="eyebrow">Decisions</span>
-        <ol className="mt-3">
+        <ol className="leaf mt-3 p-5 sm:p-6">
           {chain.map((role, index) => {
             const decision = application.decisions.find(
               (d) => d.approverRole === role,
@@ -156,15 +156,18 @@ export function ApplicationDetail({
 
             return (
               <li key={role} className="flex gap-4">
-                {/* The rail: a mark on a line, connected until the last stop. */}
+                {/* The rail: a ring on a line, connected until the last stop.
+                    Hollow while waiting, filled once decided. */}
                 <div
                   className="flex flex-col items-center"
                   aria-hidden="true"
                 >
                   <span
-                    className={`mt-1.5 h-2.5 w-2.5 shrink-0 rotate-45 border ${
+                    className={`mt-1 h-3 w-3 shrink-0 rounded-full border-2 ${
                       decision === undefined
-                        ? "border-rule-strong bg-leaf"
+                        ? isNext(application, role)
+                          ? "border-viridian bg-white"
+                          : "border-rule-strong bg-white"
                         : rejected
                           ? "border-oxide bg-oxide"
                           : "border-viridian bg-viridian"
@@ -173,7 +176,7 @@ export function ApplicationDetail({
                   {!last && (
                     <span
                       className={`w-px flex-1 ${
-                        decision === undefined ? "bg-rule" : "bg-viridian/35"
+                        decision === undefined ? "my-1 bg-rule" : "my-1 bg-viridian/35"
                       }`}
                     />
                   )}
@@ -210,7 +213,7 @@ export function ApplicationDetail({
                         </span>
                       </p>
                       {decision.remarks && (
-                        <p className="mt-2 border-l-2 border-rule-strong pl-3 font-display text-sm italic leading-relaxed text-ink-pencil">
+                        <p className="mt-2.5 rounded-xl bg-bond px-4 py-3 text-sm leading-relaxed text-ink-pencil">
                           {decision.remarks}
                         </p>
                       )}
@@ -249,7 +252,7 @@ function Cell({
   muted?: boolean;
 }) {
   return (
-    <div className="bg-leaf px-4 py-3">
+    <div className="bg-white px-5 py-4">
       <dt className="eyebrow">{label}</dt>
       <dd
         className={`mt-1.5 text-sm ${mono ? "tnum font-mono" : ""} ${

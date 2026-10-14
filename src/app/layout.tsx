@@ -1,24 +1,19 @@
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import type { Metadata } from "next";
-import { Poppins, Roboto_Mono } from "next/font/google";
+import { Inter_Tight, Roboto_Mono } from "next/font/google";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import "./globals.css";
 
 /**
- * Poppins throughout. Its geometric, wide-aperture letterforms stay legible at
- * small sizes on the modest screens this will be used on, and the single family
- * across headings and UI keeps the interface calm — the loan figures are what
- * should stand out, not the typography.
+ * Inter Tight throughout (Object White). Loaded as the variable font so the
+ * featherweight display cut and the 500/600 UI weights come from one file.
+ * Its tight, neutral letterforms let the figures and decisions carry the page.
  */
-const sans = Poppins({
+const sans = Inter_Tight({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
 });
-
-// Poppins does the display work too, at heavier weights and tighter tracking,
-// so --font-display simply points at the same family.
 
 // Every queue number, peso amount and date is set in mono with tabular figures,
 // so a column of them aligns exactly as it would in a ledger.
@@ -30,9 +25,12 @@ const mono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Loan and Hospitalization Claim",
+  title: {
+    default: "PIT Faculty Association",
+    template: "%s · PIT Faculty Association",
+  },
   description:
-    "Loan applications and hospitalization claims for the PIT Faculty Association — Palompon Institute of Technology",
+    "Loans and claims for members of the PIT Faculty Association, Palompon Institute of Technology.",
 };
 
 export default function RootLayout({

@@ -12,7 +12,7 @@ import { Resend as ResendAPI } from "resend";
  * variables:
  *
  *   npx convex env set AUTH_RESEND_KEY re_xxxxxxxx
- *   npx convex env set AUTH_EMAIL_FROM "Loan and Hospitalization Claim <onboarding@resend.dev>"
+ *   npx convex env set AUTH_EMAIL_FROM "PIT Faculty Association <onboarding@resend.dev>"
  */
 export const ResendOTPSignUp = Resend({
   id: "resend-otp-signup",
@@ -39,17 +39,17 @@ export const ResendOTPSignUp = Resend({
   async sendVerificationRequest({ identifier: email, provider, token }) {
     const resend = new ResendAPI(provider.apiKey);
     const { error } = await resend.emails.send({
-      from: process.env.AUTH_EMAIL_FROM ?? "Loan and Hospitalization Claim <onboarding@resend.dev>",
+      from: process.env.AUTH_EMAIL_FROM ?? "PIT Faculty Association <onboarding@resend.dev>",
       to: [email],
       subject: "Confirm your email address",
       text: [
-        "Someone created a Loan and Hospitalization Claim account with this",
-        "address (PIT Faculty Association).",
+        "Someone created a PIT Faculty Association account with this",
+        "address.",
         "",
         `Your confirmation code is ${token}`,
         "",
         "Enter it on the sign-up screen within the next hour. If this was not",
-        "you, ignore this message — no account can be used without the code.",
+        "you, ignore this message. No account can be used without the code.",
       ].join("\n"),
     });
     if (error) {

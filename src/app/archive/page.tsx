@@ -52,17 +52,18 @@ export default function ArchivePage() {
         )}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-b border-rule-strong pb-3">
-        <div className="flex gap-5">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+        {/* Segmented control, matching the type switch on the form. */}
+        <div className="flex gap-1 rounded-full bg-bond p-1">
           {FILTERS.map((option) => (
             <button
               key={option.value}
               onClick={() => setFilter(option.value)}
               aria-pressed={filter === option.value}
-              className={`-mb-3 border-b-2 pb-3 text-sm transition-colors ${
+              className={`rounded-full px-4 py-1.5 text-[0.8125rem] font-medium transition-[background-color,box-shadow,color] duration-200 ${
                 filter === option.value
-                  ? "border-viridian font-medium text-ink"
-                  : "border-transparent text-ink-pencil hover:text-ink"
+                  ? "bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.04)]"
+                  : "text-ink-pencil hover:text-ink"
               }`}
             >
               {option.label}
@@ -72,7 +73,7 @@ export default function ArchivePage() {
 
         <input
           type="search"
-          className="input max-w-56 border-b-0 py-1"
+          className="input w-full max-w-64 rounded-full px-4 py-2 text-sm"
           placeholder="Search number or name"
           aria-label="Search the archive"
           value={search}
@@ -83,13 +84,13 @@ export default function ArchivePage() {
       {archive === undefined ? (
         <SkeletonTable rows={5} columns={6} />
       ) : visible.length === 0 ? (
-        <p className="mt-8 border border-dashed border-rule-strong px-5 py-12 text-center text-sm text-ink-pencil">
+        <p className="mt-8 empty-well">
           {archive.length === 0
             ? "Nothing has been archived yet."
             : "Nothing matches that search."}
         </p>
       ) : (
-        <div className="mt-6 overflow-x-auto">
+        <div className="mt-6 overflow-x-auto rounded-2xl border border-rule">
           <table className="ledger">
             <caption className="sr-only">
               Archived loan and claim applications, most recent first
@@ -110,11 +111,11 @@ export default function ArchivePage() {
             </thead>
             <tbody>
               {visible.map((app) => (
-                <tr key={app._id} className="transition-colors hover:bg-black/[0.02]">
+                <tr key={app._id} className="hover:bg-bond/70">
                   <td>
                     <Link
                       href={`/queue/${app._id}`}
-                      className="tnum font-mono text-sm font-medium underline decoration-rule-strong underline-offset-4 transition-colors hover:decoration-ink"
+                      className="tnum rounded font-mono text-sm font-medium text-viridian transition-colors hover:text-ow-accent-hover hover:underline hover:underline-offset-4"
                     >
                       {app.queueNumber}
                     </Link>

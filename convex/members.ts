@@ -330,7 +330,7 @@ export const setRole = chairMutation({
     // Guard against the chair demoting themselves and leaving no chair.
     if (member.role === "chair" && args.role !== "chair") {
       throw new ConvexError(
-        "Appoint another chair first — the association must always have one.",
+        "Appoint another chair first. The association must always have one.",
       );
     }
     await assertRoleIsFree(ctx, args.role);

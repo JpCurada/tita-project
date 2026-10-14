@@ -8,15 +8,13 @@
   }
 
   body {
-    @apply bg-bond text-ink antialiased;
+    @apply bg-white text-ink antialiased;
   }
 
-  /* Poppins is geometric; a touch of negative tracking stops headings from
-     looking loose at large sizes. */
   h1,
   h2,
   h3 {
-    letter-spacing: -0.015em;
+    letter-spacing: -0.03em;
   }
 
   /* Numbers are data: line them up. */
@@ -25,160 +23,27 @@
     font-feature-settings: "tnum" 1;
   }
 
-  /* Always visible, never only on hover — keyboard users need the anchor. */
+  /* Always visible, never only on hover: keyboard users need the anchor. */
   :focus-visible {
-    @apply outline-none ring-2 ring-viridian ring-offset-2 ring-offset-bond;
+    @apply outline-none ring-2 ring-viridian ring-offset-2 ring-offset-white;
   }
 
   ::selection {
-    background: #1d4e4a;
-    color: #fbfaf6;
+    background: #1a3d8f;
+    color: #fff;
   }
 }
 
 @layer components {
-  /* ---- Surfaces ------------------------------------------------------ */
-
-  .leaf {
-    @apply rounded-lg border border-rule bg-leaf shadow-leaf;
-  }
-
-  /* Rows that respond to the pointer: a hairline lift, never a jump. */
-  .leaf-interactive {
-    @apply leaf transition-all duration-200 ease-out
-           hover:-translate-y-px hover:border-rule-strong hover:shadow-lift
-           active:translate-y-0 active:shadow-leaf;
-  }
-
-  /* ---- Typography ---------------------------------------------------- */
-
-  .eyebrow {
-    @apply text-micro font-semibold uppercase tracking-[0.12em] text-ink-faint;
-  }
-
-  .page-title {
-    @apply font-display text-[1.625rem] font-semibold leading-tight;
-  }
-
-  .section-title {
-    @apply font-display text-lg font-semibold leading-snug;
-  }
-
-  /* ---- Controls ------------------------------------------------------ */
-
-  .label {
-    @apply mb-1.5 block text-[0.8125rem] font-medium text-ink-pencil;
-  }
-
-  /* A real box. The underline-only field read as decoration, not as
-     something you could type into. */
-  .input {
-    @apply w-full rounded-md border border-rule-strong bg-white px-3 py-2.5
-           text-sm text-ink transition-all duration-150
-           placeholder:text-ink-faint
-           hover:border-ink-faint
-           focus:border-viridian focus:outline-none focus:ring-2 focus:ring-viridian/15
-           disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-ink-faint;
-  }
-
-  textarea.input {
-    @apply leading-relaxed;
-  }
-
-  .btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-md
-           px-4 py-2.5 text-sm font-medium
-           transition-all duration-150 ease-out
-           active:scale-[0.98]
-           disabled:pointer-events-none disabled:opacity-45;
-  }
-
-  .btn-primary {
-    @apply btn bg-ink text-leaf shadow-sm hover:bg-viridian hover:shadow-lift;
-  }
-
-  .btn-secondary {
-    @apply btn border border-rule-strong bg-white text-ink
-           hover:border-ink-faint hover:bg-black/[0.02];
-  }
-
-  .btn-danger {
-    @apply btn border border-oxide/40 bg-white text-oxide
-           hover:border-oxide hover:bg-oxide hover:text-white;
-  }
-
-  .btn-quiet {
-    @apply -mx-1 rounded px-1 text-sm font-medium text-ink-pencil
-           underline decoration-rule-strong underline-offset-4
-           transition-colors duration-150
-           hover:text-viridian hover:decoration-viridian;
-  }
-
-  /* ---- Status -------------------------------------------------------- */
-
-  .stamp {
-    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border
-           px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.06em];
-  }
-
-  /* ---- Ledger table -------------------------------------------------- */
-
-  .ledger {
-    @apply w-full border-collapse text-sm;
-  }
-
-  .ledger thead th {
-    @apply border-b border-rule-strong px-4 py-2.5 text-left text-micro
-           font-semibold uppercase tracking-[0.08em] text-ink-faint;
-  }
-
-  .ledger tbody td {
-    @apply border-b border-rule px-4 py-3 align-middle;
-  }
-
-  .ledger tbody tr:last-child td {
-    @apply border-b-0;
-  }
-
-  .ledger tbody tr {
-    @apply transition-colors duration-150;
-  }
-
-  /* ---- Loading ---------------------------------------------------------
-     A skeleton in the shape of the content that is coming. A blank page with
-     the word "Loading" reads as broken; a shape reads as "nearly there". */
-  .skeleton {
-    @apply rounded bg-ink/[0.07];
-    animation: pulse-soft 1.6s ease-in-out infinite;
-  }
-}
-
-@layer components {
-  /* ---- Object White ----------------------------------------------------
-     The public pages. Scoped under one class so the shared controls (.input,
-     .btn-primary, PasswordField) pick up this skin here and keep the ledger
-     look everywhere else. */
+  /* ---- Object White ---------------------------------------------------
+     Pure white, one ink, hairlines, featherweight display type and a single
+     navy action. Every screen, public or signed in, is built from these. */
 
   .object-white {
     @apply bg-white font-object text-ow-ink antialiased;
   }
 
-  .object-white :focus-visible {
-    @apply ring-ow-accent ring-offset-white;
-  }
-
-  .object-white ::selection {
-    background: #1a3d8f;
-    color: #fff;
-  }
-
-  .object-white h1,
-  .object-white h2,
-  .object-white h3 {
-    letter-spacing: -0.03em;
-  }
-
-  /* Featherweight display: the reference's 250 with a heavier second line. */
+  /* Featherweight display with a heavier second line, as in the reference. */
   .ow-display {
     @apply font-object font-[250] leading-[1.02] tracking-[-0.045em] text-ow-ink;
   }
@@ -212,29 +77,156 @@
     transform: translateX(3px);
   }
 
+  .ow-link > .chev-back {
+    @apply inline-block transition-transform duration-200 ease-out;
+  }
+
+  .ow-link:hover > .chev-back {
+    transform: translateX(-3px);
+  }
+
   .ow-navlink {
     @apply rounded text-[0.8125rem] font-medium text-ow-gray transition-colors duration-150
            hover:text-ow-ink;
   }
 
-  .object-white .label {
-    @apply mb-2 text-[0.8125rem] font-medium text-ow-ink;
+  /* ---- Surfaces ------------------------------------------------------ */
+
+  /* A white card held by a hairline. No paper shadow: the line does it. */
+  .leaf {
+    @apply rounded-2xl border border-rule bg-white;
   }
 
-  .object-white .input {
-    @apply rounded-xl border-ow-line bg-white px-4 py-3 text-[0.9375rem] text-ow-ink
-           placeholder:text-ow-gray/70
-           hover:border-ow-gray/50
-           focus:border-ow-accent focus:ring-4 focus:ring-ow-accent/10;
+  /* Rows that respond to the pointer: the hairline darkens and the card
+     lifts on a soft shadow, never a jump. */
+  .leaf-interactive {
+    @apply leaf transition-[border-color,box-shadow,transform] duration-200 ease-out
+           hover:-translate-y-px hover:border-rule-strong hover:shadow-lift
+           active:translate-y-0 active:shadow-none;
   }
 
-  .object-white .btn-primary {
-    @apply rounded-full bg-ow-accent font-semibold text-white shadow-none
-           hover:bg-ow-accent-hover hover:shadow-none;
+  /* Nothing here yet: a quiet grey well instead of a dashed box. */
+  .empty-well {
+    @apply rounded-2xl bg-bond px-6 py-12 text-center text-sm leading-relaxed text-ink-pencil;
   }
 
-  .object-white .btn-quiet {
-    @apply text-ow-accent no-underline hover:text-ow-accent-hover hover:underline;
+  /* A list of rows inside one card. */
+  .row-list {
+    @apply divide-y divide-rule overflow-hidden rounded-2xl border border-rule bg-white;
+  }
+
+  .row-link {
+    @apply flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3.5 transition-colors duration-150
+           hover:bg-bond/70 sm:px-5;
+  }
+
+  /* ---- Typography ---------------------------------------------------- */
+
+  .eyebrow {
+    @apply text-micro font-semibold uppercase tracking-[0.12em] text-ink-faint;
+  }
+
+  .page-title {
+    @apply text-[2rem] font-[300] leading-[1.05] tracking-[-0.04em] sm:text-[2.5rem];
+  }
+
+  .section-title {
+    @apply text-lg font-semibold leading-snug tracking-[-0.02em];
+  }
+
+  /* ---- Controls ------------------------------------------------------ */
+
+  .label {
+    @apply mb-2 block text-[0.8125rem] font-medium text-ink;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-rule-strong bg-white px-4 py-3
+           text-[0.9375rem] text-ink transition-[border-color,box-shadow] duration-150
+           placeholder:text-ink-faint/80
+           hover:border-ink-faint/60
+           focus:border-viridian focus:outline-none focus:ring-4 focus:ring-viridian/10
+           disabled:cursor-not-allowed disabled:bg-bond disabled:text-ink-faint;
+  }
+
+  textarea.input {
+    @apply leading-relaxed;
+  }
+
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-full
+           px-5 py-2.5 text-sm font-semibold
+           transition-[background-color,border-color,color,transform] duration-200 ease-out
+           active:scale-[0.97]
+           disabled:pointer-events-none disabled:opacity-45;
+  }
+
+  .btn-primary {
+    @apply btn bg-viridian text-white hover:bg-ow-accent-hover;
+  }
+
+  .btn-secondary {
+    @apply btn border border-rule-strong bg-white text-ink
+           hover:border-ink/40 hover:bg-bond/60;
+  }
+
+  .btn-danger {
+    @apply btn border border-oxide/35 bg-white text-oxide
+           hover:border-oxide hover:bg-oxide hover:text-white;
+  }
+
+  .btn-quiet {
+    @apply -mx-1 rounded px-1 text-sm font-medium text-viridian
+           transition-colors duration-150
+           hover:text-ow-accent-hover hover:underline hover:underline-offset-4;
+  }
+
+  /* ---- Status -------------------------------------------------------- */
+
+  .stamp {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border
+           px-2.5 py-1 text-[0.6875rem] font-semibold tracking-[0.01em];
+  }
+
+  /* ---- Notices ------------------------------------------------------- */
+
+  .notice {
+    @apply rounded-xl bg-viridian-wash px-4 py-3 text-sm leading-relaxed text-viridian;
+  }
+
+  .notice-error {
+    @apply rounded-xl bg-oxide-wash px-4 py-3 text-sm leading-relaxed text-oxide;
+  }
+
+  /* ---- Ledger table -------------------------------------------------- */
+
+  .ledger {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .ledger thead th {
+    @apply border-b border-rule-strong px-4 py-3 text-left text-micro
+           font-semibold uppercase tracking-[0.08em] text-ink-faint;
+  }
+
+  .ledger tbody td {
+    @apply border-b border-rule px-4 py-3.5 align-middle;
+  }
+
+  .ledger tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .ledger tbody tr {
+    @apply transition-colors duration-150;
+  }
+
+  /* ---- Loading ---------------------------------------------------------
+     A skeleton in the shape of the content that is coming. A blank page with
+     the word "Loading" reads as broken; a shape reads as "nearly there". */
+  .skeleton {
+    @apply rounded-lg bg-black/[0.06];
+    animation: pulse-soft 1.6s ease-in-out infinite;
   }
 }
 

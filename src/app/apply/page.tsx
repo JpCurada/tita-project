@@ -89,31 +89,31 @@ export default function ApplyPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <span className="eyebrow">Loan and Hospitalization Claim</span>
+      <span className="eyebrow">New application</span>
       <h1 className="page-title mt-1.5">
         {claim ? "Claim application" : "Loan application"}
       </h1>
-      <p className="mt-2 max-w-lg font-display text-[0.9375rem] leading-relaxed text-ink-pencil">
+      <p className="mt-2 max-w-lg text-[0.9375rem] leading-relaxed text-ink-pencil">
         {claim
           ? "Decided by the Chair of the Loan Committee alone. Your claim number is issued the moment you file."
           : "Payable within five (5) months, deducted every quincena. Your loan number is issued the moment you file."}
       </p>
 
-      <hr className="mt-6 border-rule-strong" />
+      <hr className="mt-6 border-rule" />
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-9">
         <fieldset>
           <legend className="label">Type</legend>
-          {/* Hairline grid: the gap shows the border colour behind the cells,
-              so the rules stay single when the four options wrap to two rows. */}
-          <div className="grid grid-cols-2 gap-px border border-rule-strong bg-rule-strong sm:grid-cols-4">
+          {/* A segmented control: the chosen type rises out of a grey track,
+              the way a hardware switch sits proud of its housing. */}
+          <div className="grid grid-cols-2 gap-1 rounded-2xl bg-bond p-1 sm:grid-cols-4">
             {[...LOAN_TYPES, ...CLAIM_TYPES].map((type) => (
               <label
                 key={type}
-                className={`cursor-pointer px-4 py-2.5 text-center text-sm transition-colors ${
+                className={`cursor-pointer rounded-xl px-4 py-2.5 text-center text-sm transition-[background-color,box-shadow,color] duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-viridian ${
                   loanType === type
-                    ? "bg-ink font-medium text-leaf"
-                    : "bg-leaf text-ink-pencil hover:text-ink"
+                    ? "bg-white font-semibold text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.04)]"
+                    : "text-ink-pencil hover:text-ink"
                 }`}
               >
                 <input
@@ -130,7 +130,7 @@ export default function ApplyPage() {
                 <span className="block">{typeLabel(type)}</span>
                 <span
                   className={`block text-[0.6875rem] ${
-                    loanType === type ? "text-leaf/60" : "text-ink-faint"
+                    loanType === type ? "font-normal text-ink-pencil" : "text-ink-faint"
                   }`}
                 >
                   {isClaim(type) ? "Claim" : "Loan"}
@@ -154,7 +154,7 @@ export default function ApplyPage() {
             </label>
             <div className="relative max-w-56">
               <span
-                className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 font-mono text-ink-faint"
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-ink-faint"
                 aria-hidden="true"
               >
                 ₱
@@ -166,7 +166,7 @@ export default function ApplyPage() {
                 min="1"
                 max={MAX_CLAIM_AMOUNT}
                 step="1"
-                className="input tnum pl-5 font-mono"
+                className="input tnum pl-8 font-mono"
                 value={claimAmount}
                 onChange={(event) => setClaimAmount(event.target.value)}
               />
@@ -188,11 +188,11 @@ export default function ApplyPage() {
                   return (
                     <label
                       key={amount}
-                      className={`relative cursor-pointer rounded-lg border-2 bg-white px-4 py-4
-                                  transition-all duration-150 ${
+                      className={`relative cursor-pointer rounded-2xl border bg-white px-5 py-4
+                                  transition-[border-color,box-shadow] duration-200 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-viridian/40 ${
                         selected
-                          ? "border-viridian bg-viridian-wash shadow-leaf"
-                          : "border-rule hover:border-ink-faint hover:shadow-leaf"
+                          ? "border-viridian shadow-[0_0_0_1px_#1a3d8f]"
+                          : "border-rule-strong hover:border-ink/40"
                       }`}
                     >
                       <input
@@ -229,7 +229,7 @@ export default function ApplyPage() {
                       </span>
                       <span
                         className={`mt-1 block text-xs ${
-                          selected ? "text-viridian/75" : "text-ink-faint"
+                          selected ? "text-ink-pencil" : "text-ink-faint"
                         }`}
                       >
                         {formatPeso(deductionFor(amount) ?? 0)} × 10 paydays
@@ -261,7 +261,7 @@ export default function ApplyPage() {
                 {coMakers?.map((candidate) => (
                   <option key={candidate._id} value={candidate._id}>
                     {candidate.name}
-                    {candidate.position ? ` — ${candidate.position}` : ""}
+                    {candidate.position ? ` · ${candidate.position}` : ""}
                     {candidate.registered ? "" : " (not yet signed up)"}
                   </option>
                 ))}
@@ -271,14 +271,14 @@ export default function ApplyPage() {
                 members are listed.
               </p>
               {selectedCoMaker !== undefined && !selectedCoMaker.registered && (
-                <p className="mt-2.5 border-l-2 border-amber-ledger bg-amber-wash px-3 py-2 text-sm text-amber-ledger">
+                <p className="mt-3 rounded-xl bg-amber-wash px-4 py-3 text-sm leading-relaxed text-amber-ledger">
                   {selectedCoMaker.name} is on the roll but has not created an
-                  account yet. You can still file — ask them to sign up so they can
+                  account yet. You can still file. Ask them to sign up so they can
                   follow this loan too.
                 </p>
               )}
               {coMakers?.length === 0 && (
-                <p className="mt-2.5 border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide">
+                <p className="notice-error mt-3">
                   No permanent members are registered yet. Ask the chair to add them
                   before you file.
                 </p>
@@ -290,13 +290,13 @@ export default function ApplyPage() {
         {error !== null && (
           <p
             role="alert"
-            className="border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
+            className="notice-error rise"
           >
             {error}
           </p>
         )}
 
-        <div className="flex items-center justify-end gap-5 border-t border-rule-strong pt-6">
+        <div className="flex items-center justify-end gap-5 border-t border-rule pt-6">
           <button
             type="button"
             className="btn-quiet"

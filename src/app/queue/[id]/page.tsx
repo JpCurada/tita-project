@@ -73,13 +73,13 @@ export default function ReviewPage() {
 
   return (
     <div>
-      <Link href="/queue" className="btn-quiet mb-7 inline-block">
-        Back to queue
+      <Link href="/queue" className="ow-link mb-7 text-sm font-medium">
+        <span className="chev-back" aria-hidden="true">‹</span> Queue
       </Link>
 
       <ApplicationDetail application={application}>
         {isApprover && (
-          <section className="mt-9 border-t-2 border-ink pt-6">
+          <section className="leaf mt-8 p-6 sm:p-7">
             <span className="eyebrow">Your decision</span>
             <h2 className="section-title mt-1.5">{roleTitle(member.role)}</h2>
 
@@ -90,7 +90,7 @@ export default function ReviewPage() {
                     Remarks
                     <span className="font-normal text-ink-faint">
                       {" "}
-                      — required to disapprove, recorded permanently
+                      (required to disapprove, recorded permanently)
                     </span>
                   </label>
                   <textarea
@@ -105,7 +105,7 @@ export default function ReviewPage() {
                 {error !== null && (
                   <p
                     role="alert"
-                    className="border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
+                    className="notice-error"
                   >
                     {error}
                   </p>
@@ -154,7 +154,7 @@ export default function ReviewPage() {
         )}
 
         {member.role === "treasurer" && application.status === "approved" && (
-          <section className="mt-9 border-t-2 border-ink pt-6">
+          <section className="leaf mt-8 p-6 sm:p-7">
             <span className="eyebrow">Treasurer</span>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-pencil">
               This {noun} is approved and ready for release. Record it on the{" "}
@@ -195,11 +195,11 @@ export default function ReviewPage() {
         </p>
         <p className="mt-2.5">
           {confirming === "rejected"
-            ? "This ends the application immediately — the remaining approvers will not be asked. The borrower is emailed your reason. It cannot be undone."
+            ? "This ends the application immediately. The remaining approvers will not be asked. The borrower is emailed your reason. It cannot be undone."
             : "Your name is recorded against this decision permanently, and the borrower is emailed. It cannot be changed."}
         </p>
         {remarks.trim() !== "" && (
-          <p className="mt-3 border-l-2 border-rule-strong pl-3 italic">
+          <p className="mt-3 rounded-xl bg-bond px-4 py-3">
             “{remarks.trim()}”
           </p>
         )}

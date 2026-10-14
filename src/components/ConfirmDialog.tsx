@@ -100,7 +100,7 @@ export function ConfirmDialog({
     >
       {/* Backdrop. Clicking it cancels, the same as Escape. */}
       <div
-        className="fade-in absolute inset-0 bg-ink/35 backdrop-blur-[2px]"
+        className="fade-in absolute inset-0 bg-black/30 backdrop-blur-sm"
         onClick={() => !busy && onCancel()}
         aria-hidden="true"
       />
@@ -108,10 +108,10 @@ export function ConfirmDialog({
       {/* Rises from the bottom on a phone, scales in on a larger screen. */}
       <div
         ref={panelRef}
-        className="dialog-panel relative w-full max-w-md rounded-t-xl bg-leaf
-                   p-6 shadow-lift sm:rounded-xl"
+        className="dialog-panel relative w-full max-w-md rounded-t-3xl bg-white
+                   p-6 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.25)] sm:rounded-3xl sm:p-7"
       >
-        <h2 id="confirm-title" className="section-title">
+        <h2 id="confirm-title" className="text-[1.375rem] font-[400] leading-tight tracking-[-0.03em]">
           {title}
         </h2>
 

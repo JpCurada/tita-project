@@ -6,11 +6,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PasswordField } from "@/components/PasswordField";
-import { ObjectFooter } from "@/components/object/ObjectFooter";
-import { ObjectNav } from "@/components/object/ObjectNav";
+import { Medallion } from "@/components/object/Medallion";
+import { SOCIAL_LINKS } from "@/components/SiteFooter";
 import { Spinner } from "@/components/Spinner";
 import { toUserMessage } from "@/lib/errors";
-import { objectFont } from "@/lib/fonts";
 
 export type Flow = "signIn" | "signUp" | "verify" | "forgot" | "code" | "reset";
 
@@ -157,40 +156,108 @@ export function SignInForm({ initialFlow = "signIn" }: { initialFlow?: Flow }) {
   }
 
   return (
-    <div className={`${objectFont.variable} object-white flex min-h-screen flex-col`}>
-      <ObjectNav
-        action={
-          <Link href="/" className="ow-link text-[0.875rem]">
-            <span aria-hidden="true">‹</span> Home
-          </Link>
-        }
-      />
+    <div className="object-white min-h-screen lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      {/* Left: home. The landing page in brief, with the way back to it, so
+          sign-in never feels like a dead end. */}
+      <section className="relative hidden flex-col overflow-hidden bg-ow-mist px-12 py-9 lg:sticky lg:top-0 lg:flex lg:h-screen xl:px-16">
+        <Link
+          href="/"
+          className="flex w-fit items-center gap-2.5 rounded"
+          aria-label="PIT Faculty Association, home"
+        >
+          <Image src="/pit-logo.png" alt="" width={32} height={32} priority />
+          <span className="text-[1.0625rem] font-semibold tracking-[-0.01em]">
+            PIT Faculty Association
+          </span>
+        </Link>
 
-      <main className="flex flex-1 flex-col items-center px-4 py-12 sm:py-20">
-        <div className="w-full max-w-[25rem]">
+        {/* The medallion steps aside on short screens so the steps and the
+            way home always fit without scrolling. */}
+        <div className="my-auto py-8">
+          <Medallion className="mb-10 w-[10rem] [@media(max-height:860px)]:hidden xl:w-[11rem]" />
+          <p className="ow-eyebrow">Palompon Institute of Technology</p>
+          <p className="ow-display mt-4 text-[2.75rem] xl:text-[3.25rem]">
+            Apply once.
+            <br />
+            <span className="font-medium">See every step.</span>
+          </p>
+
+          <ol className="mt-8 max-w-md divide-y divide-ow-line/80 border-y border-ow-line/80">
+            {STEPS.map(([term, detail], index) => (
+              <li key={term} className="flex gap-5 py-3.5">
+                <span className="tnum w-6 shrink-0 pt-px text-sm font-[300] text-ow-gray">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span>
+                  <span className="block text-[0.9375rem] font-semibold">{term}</span>
+                  <span className="mt-0.5 block text-sm leading-relaxed text-ow-gray">
+                    {detail}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="flex items-center justify-between gap-6">
+          <Link href="/" className="ow-link text-[0.9375rem]">
+            <span className="chev-back" aria-hidden="true">‹</span> Back to home
+          </Link>
+          <ul className="flex items-center gap-2" aria-label="The association elsewhere">
+            {SOCIAL_LINKS.map(({ href, label, icon: Icon }) => (
+              <li key={href}>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${label} (opens in a new tab)`}
+                  title={label}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-ow-line text-ow-gray transition-colors duration-200 hover:border-ow-ink hover:text-ow-ink"
+                >
+                  <Icon />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Right: sign in. */}
+      <section className="flex min-h-screen flex-col">
+        {/* On a phone the left column is hidden, so home lives up here, on
+            the left where it was on the wide screen. */}
+        <div className="flex h-16 items-center justify-between px-4 sm:px-8 lg:hidden">
+          <Link href="/" className="ow-link text-[0.9375rem]">
+            <span className="chev-back" aria-hidden="true">‹</span> Home
+          </Link>
+          <Link
+            href="/"
+            className="flex items-center gap-2 rounded"
+            aria-label="PIT Faculty Association, home"
+          >
+            <Image src="/pit-logo.png" alt="" width={28} height={28} priority />
+            <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">
+              PIT Faculty Association
+            </span>
+          </Link>
+        </div>
+
+        <main className="flex flex-1 flex-col justify-center px-4 py-10 sm:px-8 lg:px-14">
+        <div className="mx-auto w-full max-w-[24rem]">
           {/* Keyed on the step, so each change of step settles in rather
               than swapping text in place. */}
-          <div key={flow} className="rise text-center">
-            <Image
-              src="/pit-logo.png"
-              alt="Palompon Institute of Technology seal"
-              width={56}
-              height={56}
-              className="mx-auto"
-              priority
-            />
-            <p className="ow-eyebrow mt-6">Loan and Hospitalization Claim</p>
-            <h1 className="ow-display mt-3 text-[2.5rem] sm:text-[3rem]">
+          <div key={flow} className="rise">
+            <h1 className="ow-display text-[2.5rem] sm:text-[3rem]">
               {HEADINGS[flow].title}
             </h1>
-            <p className="mx-auto mt-3 max-w-[22rem] text-[0.9375rem] leading-relaxed text-ow-gray">
+            <p className="mt-3 text-[0.9375rem] leading-relaxed text-ow-gray">
               {HEADINGS[flow].blurb}
             </p>
           </div>
 
           <form
             onSubmit={flow === "code" ? handleCodeStep : handleSubmit}
-            className="mt-9 space-y-5"
+            className="mt-8 space-y-5"
           >
             {flow === "code" || flow === "verify" ? (
               <div>
@@ -209,7 +276,7 @@ export function SignInForm({ initialFlow = "signIn" }: { initialFlow?: Flow }) {
                   placeholder="00000000"
                   className="input tnum text-center font-mono text-xl tracking-[0.35em]"
                 />
-                <p className="mt-2.5 text-center text-xs text-ow-gray">
+                <p className="mt-2.5 text-xs text-ow-gray">
                   Eight digits, sent to {email}.
                 </p>
               </div>
@@ -282,7 +349,7 @@ export function SignInForm({ initialFlow = "signIn" }: { initialFlow?: Flow }) {
             {notice !== null && (
               <p
                 aria-live="polite"
-                className="rise rounded-xl bg-[#eef2fb] px-4 py-3 text-sm leading-relaxed text-ow-accent"
+                className="notice rise"
               >
                 {notice}
               </p>
@@ -291,7 +358,7 @@ export function SignInForm({ initialFlow = "signIn" }: { initialFlow?: Flow }) {
             {error !== null && (
               <p
                 role="alert"
-                className="rise rounded-xl bg-[#fdf0ee] px-4 py-3 text-sm leading-relaxed text-[#a1281a]"
+                className="notice-error rise"
               >
                 {error}
               </p>
@@ -308,13 +375,13 @@ export function SignInForm({ initialFlow = "signIn" }: { initialFlow?: Flow }) {
           </form>
 
           {flow === "signIn" && !EMAIL_ENABLED && (
-            <p className="mt-4 text-center text-xs leading-relaxed text-ow-gray">
+            <p className="mt-4 text-xs leading-relaxed text-ow-gray">
               Forgotten your password? Ask the Chair of the Loan Committee to
               set a new one for you.
             </p>
           )}
 
-          <p className="mt-7 text-center text-sm text-ow-gray">
+          <p className="mt-7 text-sm text-ow-gray">
             {flow === "signIn" && (
               <>
                 No account yet?{" "}
@@ -359,12 +426,24 @@ export function SignInForm({ initialFlow = "signIn" }: { initialFlow?: Flow }) {
             )}
           </p>
         </div>
-      </main>
+        </main>
 
-      <ObjectFooter />
+        <p className="px-4 pb-6 text-center text-xs text-ow-gray sm:px-8">
+          © {new Date().getFullYear()} PIT Faculty Association · Palompon, Leyte
+        </p>
+      </section>
     </div>
   );
 }
+
+const STEPS = [
+  ["File", "Your number is issued the moment you apply."],
+  [
+    "Review",
+    "Loans: two committee members decide, then the chair. Claims: the chair alone.",
+  ],
+  ["Release", "The treasurer records it and files your form."],
+] as const;
 
 const HEADINGS: Record<
   Flow,

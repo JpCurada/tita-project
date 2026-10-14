@@ -20,8 +20,8 @@ export default function MyApplicationPage() {
 
   return (
     <div>
-      <Link href="/dashboard" className="btn-quiet mb-7 inline-block">
-        Back to my applications
+      <Link href="/dashboard" className="ow-link mb-7 text-sm font-medium">
+        <span className="chev-back" aria-hidden="true">‹</span> My applications
       </Link>
       <ApplicationDetail application={application} />
     </div>

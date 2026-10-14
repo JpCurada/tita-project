@@ -9,11 +9,10 @@ import {
 import { Medallion } from "@/components/object/Medallion";
 import { ObjectFooter } from "@/components/object/ObjectFooter";
 import { ObjectNav } from "@/components/object/ObjectNav";
-import { objectFont } from "@/lib/fonts";
 
 /**
- * The public front door. Signed-in members never see it — the middleware sends
- * them straight to their dashboard — so it speaks to someone deciding whether
+ * The public front door. Signed-in members never see it (the middleware sends
+ * them straight to their dashboard), so it speaks to someone deciding whether
  * to sign in, and to the colleague who followed a link from Facebook.
  *
  * Every figure below comes from convex/lib/loan.ts, the same rules the
@@ -21,7 +20,7 @@ import { objectFont } from "@/lib/fonts";
  */
 
 export const metadata: Metadata = {
-  title: "PIT Faculty Association — Loans and Claims",
+  title: { absolute: "PIT Faculty Association · Loans and claims" },
 };
 
 const peso = (n: number) => `₱${n.toLocaleString("en-PH")}`;
@@ -42,7 +41,7 @@ const STEPS = [
   {
     term: "File",
     detail:
-      "Fill in the form online. Your queue number is issued the moment you submit — no waiting to find out where you stand.",
+      "Fill in the form online. Your queue number is issued the moment you submit, so you always know where you stand.",
   },
   {
     term: "Review",
@@ -58,7 +57,7 @@ const STEPS = [
 
 export default function Home() {
   return (
-    <div className={`${objectFont.variable} object-white flex min-h-screen flex-col`}>
+    <div className="object-white flex min-h-screen flex-col">
       <a
         href="#main"
         className="sr-only z-50 rounded-full bg-ow-ink px-4 py-2 text-sm text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-3"
@@ -79,7 +78,7 @@ export default function Home() {
         {/* ---- Hero ---------------------------------------------------- */}
         <section className="mx-auto flex min-h-[calc(100svh-4rem)] max-w-6xl flex-col items-center px-4 pt-10 text-center sm:px-8 sm:pt-14">
           <p className="ow-eyebrow rise">
-            Palompon Institute of Technology — Faculty Association
+            Palompon Institute of Technology · Faculty Association
           </p>
 
           <h1
@@ -95,9 +94,8 @@ export default function Home() {
             className="rise mt-5 max-w-[30rem] text-[1rem] leading-[1.6] text-ow-gray sm:text-[1.0625rem]"
             style={{ animationDelay: "120ms" }}
           >
-            Loans and hospitalization claims for association members — filed
-            online, numbered the moment you apply, and decided with a record of
-            who signed off.
+            Loans and claims for association members. Filed online, numbered
+            the moment you apply, and decided with a record of who signed off.
           </p>
 
           <div

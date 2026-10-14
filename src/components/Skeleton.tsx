@@ -16,7 +16,7 @@ export function SkeletonHeader() {
     <div>
       <SkeletonLine className="w-20" />
       <SkeletonLine className="mt-3 h-6 w-56" />
-      <hr className="mt-5 border-rule-strong" />
+      <hr className="mt-6 border-rule" />
     </div>
   );
 }
@@ -24,9 +24,9 @@ export function SkeletonHeader() {
 /** Matches a list of loan rows. */
 export function SkeletonRows({ count = 3 }: { count?: number }) {
   return (
-    <div className="mt-8 divide-y divide-rule border-y border-rule">
+    <div className="mt-8 row-list">
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="flex items-center gap-6 py-4">
+        <div key={i} className="flex items-center gap-6 px-5 py-4">
           <div className="skeleton h-8 w-16 shrink-0" />
           <SkeletonLine className="w-40 flex-1" />
           <SkeletonLine className="hidden w-24 sm:block" />
@@ -46,7 +46,7 @@ export function SkeletonTable({
   columns?: number;
 }) {
   return (
-    <div className="mt-7 overflow-hidden rounded-lg border border-rule">
+    <div className="mt-7 overflow-hidden rounded-2xl border border-rule">
       <div className="flex gap-4 border-b border-rule-strong px-4 py-3">
         {Array.from({ length: columns }, (_, i) => (
           <SkeletonLine key={i} className="h-2.5 flex-1" />
@@ -75,10 +75,10 @@ export function SkeletonDetail() {
         <div className="skeleton h-7 w-32 rounded-full" />
       </div>
 
-      <hr className="mt-6 border-rule-strong" />
+      <hr className="mt-6 border-rule" />
 
       <SkeletonLine className="mt-7 w-16" />
-      <div className="mt-3 grid gap-px overflow-hidden rounded-lg border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-3 grid gap-px overflow-hidden rounded-2xl border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }, (_, i) => (
           <div key={i} className="bg-leaf px-4 py-3.5">
             <SkeletonLine className="h-2.5 w-14" />

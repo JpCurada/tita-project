@@ -50,7 +50,7 @@ export function ObjectFooter() {
 
       <div className="mx-auto flex max-w-6xl flex-col gap-1 border-t border-ow-line/50 px-4 py-5 text-xs text-ow-gray sm:flex-row sm:justify-between sm:px-8 lg:px-12">
         <p>© {new Date().getFullYear()} PIT Faculty Association. For members only.</p>
-        <p>Loan and Hospitalization Claim</p>
+        <p>Palompon, Leyte, Philippines</p>
       </div>
     </footer>
   );

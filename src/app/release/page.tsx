@@ -28,15 +28,15 @@ export default function ReleasePage() {
     <div className="max-w-3xl">
       <span className="eyebrow">Treasurer</span>
       <h1 className="page-title mt-1.5">Release</h1>
-      <p className="mt-2 max-w-lg font-display text-[0.9375rem] leading-relaxed text-ink-pencil">
+      <p className="mt-2 max-w-lg text-[0.9375rem] leading-relaxed text-ink-pencil">
         Approved loans and claims waiting to be paid out. Recording a release
         files the application into the archive.
       </p>
 
-      <hr className="mt-6 border-rule-strong" />
+      <hr className="mt-6 border-rule" />
 
       {ready.length === 0 ? (
-        <p className="mt-8 border border-dashed border-rule-strong px-5 py-12 text-center text-sm text-ink-pencil">
+        <p className="mt-8 empty-well">
           No approved loans or claims are waiting for release.
         </p>
       ) : (
@@ -106,7 +106,7 @@ function ReleaseCard({
   }
 
   return (
-    <li className="leaf p-5">
+    <li className="leaf p-6">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <QueueStub queueNumber={queueNumber} />
         <span className="flex-1 text-sm font-medium">
@@ -165,7 +165,7 @@ function ReleaseCard({
       {error !== null && (
         <p
           role="alert"
-          className="mt-4 border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
+          className="mt-4 notice-error"
         >
           {error}
         </p>
@@ -200,7 +200,7 @@ function ReleaseCard({
           </div>
         </dl>
         {differsFromApproved && (
-          <p className="mt-3 border-l-2 border-amber-ledger bg-amber-wash px-3 py-2 text-amber-ledger">
+          <p className="mt-3 rounded-xl bg-amber-wash px-4 py-3 text-amber-ledger">
             This differs from the approved amount of {formatPeso(loanAmount)}.
           </p>
         )}

@@ -20,59 +20,46 @@ export const SOCIAL_LINKS = [
   },
 ];
 
-export function SiteFooter({ tone = "light" }: { tone?: "light" | "dark" }) {
-  const dark = tone === "dark";
-
+export function SiteFooter() {
   return (
-    <footer
-      className={`mt-auto border-t ${
-        dark ? "border-leaf/15" : "border-rule"
-      }`}
-    >
-      <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 px-5 py-8 sm:flex-row sm:justify-between">
+    <footer className="mt-auto border-t border-rule">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-5 px-5 py-8 sm:flex-row sm:justify-between">
         <div className="flex items-center gap-3">
-          {!dark && (
-            <Image
-              src="/pit-logo.png"
-              alt=""
-              width={28}
-              height={28}
-              className="shrink-0"
-            />
-          )}
-          <p
-            className={`text-center text-xs leading-relaxed sm:text-left ${
-              dark ? "text-leaf/45" : "text-ink-pencil"
-            }`}
-          >
-            <span className="block font-medium">
-              Loan and Hospitalization Claim · PIT Faculty Association
+          <Image
+            src="/pit-logo.png"
+            alt="Palompon Institute of Technology seal"
+            width={34}
+            height={34}
+            className="shrink-0"
+          />
+          <p className="text-center text-xs leading-relaxed sm:text-left">
+            <span className="block text-[0.8125rem] font-semibold tracking-[-0.01em] text-ink">
+              PIT Faculty Association
             </span>
-            <span className={dark ? "text-leaf/30" : "text-ink-faint"}>
-              Palompon Institute of Technology, Palompon, Leyte
+            <span className="text-ink-pencil">
+              Palompon Institute of Technology · Palompon, Leyte
             </span>
           </p>
         </div>
 
-        <nav className="flex items-center gap-1">
+        <ul className="flex items-center gap-2" aria-label="The association elsewhere">
           {SOCIAL_LINKS.map(({ href, label, icon: Icon }) => (
-            <a
-              key={href}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${label} (opens in a new tab)`}
-              title={label}
-              className={`grid h-9 w-9 place-items-center rounded-md transition-colors duration-150 ${
-                dark
-                  ? "text-leaf/45 hover:bg-leaf/10 hover:text-leaf"
-                  : "text-ink-pencil hover:bg-black/[0.04] hover:text-viridian"
-              }`}
-            >
-              <Icon />
-            </a>
+            <li key={href}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${label} (opens in a new tab)`}
+                title={label}
+                className="grid h-9 w-9 place-items-center rounded-full border border-rule-strong text-ink-pencil
+                           transition-[color,border-color,transform] duration-200 ease-out
+                           hover:-translate-y-0.5 hover:border-ink hover:text-ink"
+              >
+                <Icon />
+              </a>
+            </li>
           ))}
-        </nav>
+        </ul>
       </div>
     </footer>
   );

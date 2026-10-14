@@ -32,13 +32,13 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <hr className="mt-5 border-rule-strong" />
+      <hr className="mt-6 border-rule" />
 
       {applications === undefined ? (
         <SkeletonRows count={3} />
       ) : applications.length === 0 ? (
-        <div className="mt-8 border border-dashed border-rule-strong px-6 py-14 text-center">
-          <p className="font-display text-lg text-ink">Nothing on file yet</p>
+        <div className="mt-8 empty-well">
+          <p className="text-xl font-[300] tracking-[-0.03em] text-ink">Nothing on file yet</p>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-ink-pencil">
             When you file a loan or a claim, its number is issued
             immediately and you can follow each decision here.
@@ -106,12 +106,12 @@ export default function DashboardPage() {
           {past.length > 0 && (
             <section className="mt-10">
               <span className="eyebrow">Settled</span>
-              <ul className="stagger mt-3 divide-y divide-rule border-y border-rule">
+              <ul className="stagger mt-3 row-list">
                 {past.map((app) => (
                   <li key={app._id}>
                     <Link
                       href={`/dashboard/${app._id}`}
-                      className="flex flex-wrap items-center gap-x-6 gap-y-3 py-3.5 transition-colors hover:bg-black/[0.02]"
+                      className="row-link"
                     >
                       <QueueStub queueNumber={app.queueNumber} tone="muted" />
                       <span className="tnum flex-1 font-mono text-sm">

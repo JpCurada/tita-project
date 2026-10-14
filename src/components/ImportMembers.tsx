@@ -113,7 +113,7 @@ export function ImportMembers({ onDone }: { onDone: () => void }) {
         </p>
 
         {result.skipped.length > 0 && (
-          <div className="mt-4 border border-rule">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-rule">
             <table className="ledger">
               <thead>
                 <tr>
@@ -126,7 +126,7 @@ export function ImportMembers({ onDone }: { onDone: () => void }) {
                 {result.skipped.map((s) => (
                   <tr key={`${s.row}-${s.name}`}>
                     <td className="tnum font-mono text-sm">{s.row}</td>
-                    <td>{s.name || "—"}</td>
+                    <td>{s.name || "Missing"}</td>
                     <td className="text-ink-pencil">{s.reason}</td>
                   </tr>
                 ))}
@@ -151,11 +151,11 @@ export function ImportMembers({ onDone }: { onDone: () => void }) {
     <div className="leaf mt-6 p-6">
       <span className="eyebrow">Paste a roster</span>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-pencil">
-        Copy the rows from your spreadsheet and paste them below — one member per
+        Copy the rows from your spreadsheet and paste them below, one member per
         line, in this order:
       </p>
 
-      <p className="mt-3 overflow-x-auto whitespace-nowrap border border-rule bg-black/[0.02] px-3 py-2 font-mono text-xs text-ink-pencil">
+      <p className="mt-3 overflow-x-auto whitespace-nowrap rounded-xl bg-bond px-4 py-3 font-mono text-xs text-ink-pencil">
         Employee no. · First name · Middle · Last name · Email · Position ·
         permanent/probationary
       </p>
@@ -191,7 +191,7 @@ export function ImportMembers({ onDone }: { onDone: () => void }) {
       {rows.length > 0 && (
         <div className="mt-5">
           <span className="eyebrow">Preview</span>
-          <div className="mt-2 max-h-72 overflow-auto border border-rule">
+          <div className="mt-2 max-h-72 overflow-auto rounded-2xl border border-rule">
             <table className="ledger">
               <thead>
                 <tr>
@@ -205,18 +205,18 @@ export function ImportMembers({ onDone }: { onDone: () => void }) {
                 {rows.map((row, index) => (
                   <tr key={index} className={row.error ? "bg-oxide-wash" : ""}>
                     <td className="tnum font-mono text-sm">
-                      {row.employeeNo || "—"}
+                      {row.employeeNo || "Missing"}
                     </td>
                     <td>
                       {`${row.firstName} ${row.middleName ?? ""} ${row.lastName}`.replace(
                         /\s+/g,
                         " ",
-                      ).trim() || "—"}
+                      ).trim() || "Missing"}
                       {row.error && (
                         <span className="block text-xs text-oxide">{row.error}</span>
                       )}
                     </td>
-                    <td className="text-ink-pencil">{row.email || "—"}</td>
+                    <td className="text-ink-pencil">{row.email || "Missing"}</td>
                     <td className="text-sm">
                       {row.isPermanent ? (
                         "Permanent"
@@ -235,7 +235,7 @@ export function ImportMembers({ onDone }: { onDone: () => void }) {
       {error !== null && (
         <p
           role="alert"
-          className="mt-4 border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
+          className="mt-4 notice-error"
         >
           {error}
         </p>

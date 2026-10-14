@@ -13,7 +13,7 @@ export {
 const MANILA = "Asia/Manila";
 
 export function formatDate(ms: number | undefined): string {
-  if (ms === undefined) return "—";
+  if (ms === undefined) return "Not yet";
   return new Date(ms).toLocaleDateString("en-PH", {
     timeZone: MANILA,
     year: "numeric",
@@ -23,7 +23,7 @@ export function formatDate(ms: number | undefined): string {
 }
 
 export function formatDateTime(ms: number | undefined): string {
-  if (ms === undefined) return "—";
+  if (ms === undefined) return "Not yet";
   return new Date(ms).toLocaleString("en-PH", {
     timeZone: MANILA,
     year: "numeric",

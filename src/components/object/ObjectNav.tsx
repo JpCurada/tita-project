@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 /**
- * Three columns — mark, sections, action — so the section links sit on the
+ * Three columns (mark, sections, action) so the section links sit on the
  * page's true centre whatever the widths either side. It floats on white until
  * the page moves, then takes a hairline and a frosted backing, so it never
  * reads as a bar until it has something to separate from.
@@ -41,7 +41,7 @@ export function ObjectNav({
         <Link
           href="/"
           className="flex min-w-0 items-center gap-2.5 rounded"
-          aria-label="PIT Faculty Association — home"
+          aria-label="PIT Faculty Association, home"
         >
           <Image
             src="/pit-logo.png"

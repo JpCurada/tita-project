@@ -36,15 +36,15 @@ function NavLink({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`relative flex items-center whitespace-nowrap rounded-t-md text-sm
+      className={`relative flex items-center whitespace-nowrap text-[0.8125rem] font-medium
                   transition-colors duration-150
-                  ${compact ? "px-3 py-2.5" : "px-3.5"}
-                  after:absolute after:inset-x-2 after:bottom-0 after:h-0.5
-                  after:rounded-full after:transition-colors after:duration-150
+                  ${compact ? "px-3 py-3" : "px-3"}
+                  after:absolute after:inset-x-3 after:bottom-0 after:h-[2px]
+                  after:rounded-full after:transition-[background-color,transform] after:duration-200
                   ${
                     active
-                      ? "font-semibold text-ink after:bg-viridian"
-                      : "text-ink-pencil hover:bg-black/[0.03] hover:text-ink after:bg-transparent"
+                      ? "text-ink after:scale-x-100 after:bg-ink"
+                      : "text-ink-pencil hover:text-ink after:scale-x-50 after:bg-transparent"
                   }`}
     >
       {label}
@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (member === null) {
       void claimProfile().catch(() => {
-        /* no matching profile — the pending screen explains what to do */
+        /* no matching profile; the pending screen explains what to do */
       });
     }
   }, [member, claimProfile]);
@@ -83,14 +83,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     // showing it immediately makes the app feel loaded while data arrives.
     return (
       <div className="flex min-h-screen flex-col">
-        <div className="border-b border-rule-strong bg-leaf">
-          <div className="flex h-14 items-center gap-2.5 px-4 sm:px-6 lg:px-8">
+        <div className="border-b border-rule bg-white">
+          <div className="flex h-16 items-center gap-2.5 px-4 sm:px-6 lg:px-8">
             <Image src="/pit-logo.png" alt="" width={30} height={30} priority />
-            <div className="skeleton h-7 w-48" />
-            <div className="skeleton ml-auto h-7 w-24" />
+            <div className="skeleton h-6 w-44" />
+            <div className="skeleton ml-auto h-8 w-24 rounded-full" />
           </div>
         </div>
-        <div className="mx-auto w-full max-w-4xl flex-1 px-5 py-9">
+        <div className="mx-auto w-full max-w-5xl flex-1 px-5 py-10 sm:py-12">
           <SkeletonPage />
         </div>
         <SiteFooter />
@@ -119,9 +119,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* The bar runs the full width of the window and its contents sit at the
           window's own edges. Boxing the header to the content column left it
           stranded in the middle of a bar that already spanned everything. */}
-      <header className="sticky top-0 z-30 border-b border-rule-strong bg-leaf/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-rule bg-white/80 backdrop-blur-xl backdrop-saturate-150">
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex h-14 items-center gap-4">
+          <div className="flex h-16 items-center gap-6">
             <Link
               href="/dashboard"
               className="group flex min-w-0 items-center gap-2.5"
@@ -135,23 +135,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                 priority
               />
               <span className="min-w-0 leading-tight">
-                <span className="eyebrow hidden text-ink-faint lg:block">
-                  Palompon Institute of Technology
+                <span className="block truncate text-[0.9375rem] font-semibold tracking-[-0.01em] text-ink">
+                  PIT Faculty Association
                 </span>
-                {/* The name is long for a phone header, so it may wrap to a
-                    second line there rather than push the sign-out button off. */}
-                <span className="block font-display text-[0.9375rem] font-semibold text-ink transition-colors group-hover:text-viridian">
-                  Loan and Hospitalization Claim
-                  <span className="hidden font-normal text-ink-faint xl:inline">
-                    {" · "}PIT Faculty Association
-                  </span>
+                <span className="hidden text-[0.6875rem] text-ink-faint xl:block">
+                  Palompon Institute of Technology
                 </span>
               </span>
             </Link>
 
             {/* Tabs sit beside the mark on a wide screen and drop to their own
                 row below it on a narrow one, so neither ever truncates. */}
-            <nav className="hidden h-full flex-1 items-stretch gap-1 md:flex">
+            <nav className="hidden h-full flex-1 items-stretch md:flex">
               {links.map((link) => (
                 <NavLink key={link.href} {...link} pathname={pathname} />
               ))}
@@ -159,13 +154,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             <div className="ml-auto flex shrink-0 items-center gap-3 md:ml-0">
               <span className="hidden text-right leading-tight sm:block">
-                <span className="block text-sm font-medium">{member.name}</span>
-                <span className="eyebrow block text-ink-faint">
+                <span className="block text-[0.8125rem] font-medium">{member.name}</span>
+                <span className="block text-[0.6875rem] text-ink-faint">
                   {roleTitle(member.role)}
                 </span>
               </span>
               <button
-                className="btn-secondary px-3 py-1.5 text-xs"
+                className="btn-secondary px-3.5 py-1.5 text-xs"
                 onClick={() => setConfirmingSignOut(true)}
               >
                 Sign out
@@ -173,7 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <nav className="-mx-1 flex items-stretch gap-1 overflow-x-auto border-t border-rule md:hidden">
+          <nav className="-mx-1 flex items-stretch overflow-x-auto border-t border-rule md:hidden">
             {links.map((link) => (
               <NavLink key={link.href} {...link} pathname={pathname} compact />
             ))}
@@ -181,7 +176,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main key={pathname} className="rise mx-auto w-full max-w-4xl flex-1 px-5 py-9">
+      <main key={pathname} className="rise mx-auto w-full max-w-5xl flex-1 px-5 py-10 sm:py-12">
         {children}
       </main>
 

@@ -12,7 +12,7 @@ import { Resend as ResendAPI } from "resend";
  * The API key lives on the Convex deployment, not in the repository:
  *
  *   npx convex env set AUTH_RESEND_KEY re_xxxxxxxx
- *   npx convex env set AUTH_EMAIL_FROM "Loan and Hospitalization Claim <onboarding@resend.dev>"
+ *   npx convex env set AUTH_EMAIL_FROM "PIT Faculty Association <onboarding@resend.dev>"
  */
 export const ResendOTPPasswordReset = Resend({
   id: "resend-otp",
@@ -41,17 +41,17 @@ export const ResendOTPPasswordReset = Resend({
     const { error } = await resend.emails.send({
       // Until the association verifies its own domain with Resend, this must
       // stay on resend.dev — Resend refuses to send from an unverified sender.
-      from: process.env.AUTH_EMAIL_FROM ?? "Loan and Hospitalization Claim <onboarding@resend.dev>",
+      from: process.env.AUTH_EMAIL_FROM ?? "PIT Faculty Association <onboarding@resend.dev>",
       to: [email],
       subject: "Your password reset code",
       text: [
-        "Someone asked to reset the password for this Loan and Hospitalization",
-        "Claim account (PIT Faculty Association).",
+        "Someone asked to reset the password for this PIT Faculty",
+        "Association account.",
         "",
         `Your code is ${token}`,
         "",
         "Enter it on the reset screen within the next hour. If you did not ask",
-        "for this, you can ignore this message — your password has not changed.",
+        "for this, you can ignore this message. Your password has not changed.",
       ].join("\n"),
     });
     if (error) {

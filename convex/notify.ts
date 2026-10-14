@@ -16,7 +16,7 @@ import { internalAction } from "./_generated/server";
 
 const FROM =
   process.env.AUTH_EMAIL_FROM ??
-  "Loan and Hospitalization Claim <onboarding@resend.dev>";
+  "PIT Faculty Association <onboarding@resend.dev>";
 
 async function send(
   to: string[],
@@ -40,7 +40,7 @@ async function send(
     text: [
       ...lines,
       "",
-      "— Loan and Hospitalization Claim, PIT Faculty Association",
+      "PIT Faculty Association, Palompon Institute of Technology",
     ].join("\n"),
   });
 
@@ -77,7 +77,7 @@ export const applicationFiled = internalAction({
     if (details.isClaim) {
       await send(
         details.chairEmails,
-        `New ${details.typeLabel.toLowerCase()} claim ${details.queueNumber} — ${details.borrowerName}`,
+        `New ${details.typeLabel.toLowerCase()} claim ${details.queueNumber}: ${details.borrowerName}`,
         [
           `${details.borrowerName} filed a ${details.typeLabel.toLowerCase()} claim.`,
           "",
@@ -94,14 +94,14 @@ export const applicationFiled = internalAction({
 
     await send(
       details.committeeEmails,
-      `New loan application ${details.queueNumber} — ${details.borrowerName}`,
+      `New loan application ${details.queueNumber}: ${details.borrowerName}`,
       [
         `${details.borrowerName} filed a loan application.`,
         "",
         `Loan number:  ${details.queueNumber}`,
         `Amount:       ${details.amount}`,
-        `Per payday:   ${details.deduction ?? "—"}`,
-        `Co-maker:     ${details.coMakerName ?? "—"}`,
+        `Per payday:   ${details.deduction ?? "None"}`,
+        `Co-maker:     ${details.coMakerName ?? "None"}`,
         `Filed:        ${details.dateFiled}`,
         "",
         "It is waiting for your decision, and the chair's once both",
@@ -133,7 +133,7 @@ export const decisionRecorded = internalAction({
     if (details === null) return;
 
     const Noun = details.noun === "claim" ? "Claim" : "Loan";
-    const heading = `${Noun} ${details.queueNumber} — ${
+    const heading = `${Noun} ${details.queueNumber} ${
       args.decision === "approved" ? "approved" : "disapproved"
     } by the ${args.approverTitle.toLowerCase()}`;
 

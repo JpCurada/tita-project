@@ -151,12 +151,12 @@ export default function MembersPage() {
         </div>
       </div>
 
-      <hr className="mt-5 border-rule-strong" />
+      <hr className="mt-6 border-rule" />
 
       {error !== null && (
         <p
           role="alert"
-          className="mt-5 border-l-2 border-oxide bg-oxide-wash px-3 py-2 text-sm text-oxide"
+          className="mt-5 notice-error"
         >
           {error}
         </p>
@@ -165,7 +165,7 @@ export default function MembersPage() {
       {panel === "many" && <ImportMembers onDone={() => setPanel("none")} />}
 
       {panel === "one" && (
-        <form onSubmit={handleCreate} className="leaf mt-6 p-6">
+        <form onSubmit={handleCreate} className="leaf mt-6 p-6 sm:p-7">
           <span className="eyebrow">New member</span>
           <div className="mt-5 grid gap-x-7 gap-y-5 sm:grid-cols-3">
             <Text name="firstName" label="First name" required />
@@ -194,7 +194,7 @@ export default function MembersPage() {
                 type="checkbox"
                 name="isPermanent"
                 defaultChecked
-                className="h-4 w-4 rounded-none border-rule-strong text-viridian focus:ring-viridian"
+                className="h-4 w-4 rounded border-rule-strong accent-[#1a3d8f]"
               />
               Permanent status
             </label>
@@ -216,7 +216,7 @@ export default function MembersPage() {
       {members === undefined ? (
         <SkeletonTable rows={6} columns={6} />
       ) : (
-        <div className="mt-7 overflow-x-auto">
+        <div className="mt-7 overflow-x-auto rounded-2xl border border-rule">
           <table className="ledger">
             <caption className="sr-only">Faculty association members</caption>
             <thead>
