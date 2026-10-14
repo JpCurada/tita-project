@@ -1,4 +1,13 @@
-export { formatPeso, roleTitle, roleLabel, roleSeat } from "@convex/lib/loan";
+export {
+  applicationNoun,
+  formatPeso,
+  isClaim,
+  roleTitle,
+  roleLabel,
+  roleSeat,
+  typeLabel,
+  type ApplicationType,
+} from "@convex/lib/loan";
 
 /** Dates are rendered in Manila time regardless of where the browser sits. */
 const MANILA = "Asia/Manila";

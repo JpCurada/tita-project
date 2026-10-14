@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
-import type { QueryCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
   approverMutation,
   memberMutation,
@@ -10,9 +10,17 @@ import {
   treasurerMutation,
   STAFF_ROLES,
 } from "./lib/auth";
-import { TERM_MONTHS, formatPeso, roleTitle, validateLoanTerms } from "./lib/loan";
+import {
+  TERM_MONTHS,
+  applicationNoun,
+  formatPeso,
+  isClaim,
+  roleTitle,
+  validateClaimAmount,
+  validateLoanTerms,
+} from "./lib/loan";
 import { nextQueueNumber } from "./lib/queue";
-import { decisionValidator, loanTypeValidator } from "./schema";
+import { claimTypeValidator, decisionValidator, loanKindValidator } from "./schema";
 
 /** Joins an application with its decisions and the names behind them. */
 async function withApprovals(ctx: QueryCtx, application: Doc<"applications">) {
@@ -43,10 +51,34 @@ export function fullName(member: Doc<"members">): string {
 /* Submission                                                                 */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * One loan and one claim at a time: anything not yet archived is still in
+ * flight. The two are counted apart — a member repaying a loan who is then
+ * hospitalised must still be able to claim.
+ */
+async function assertNoneInFlight(
+  ctx: MutationCtx,
+  member: Doc<"members">,
+  kind: "loan" | "claim",
+) {
+  const existing = await ctx.db
+    .query("applications")
+    .withIndex("by_member", (q) => q.eq("memberId", member._id))
+    .collect();
+  const inFlight = existing.some(
+    (app) => app.status !== "archived" && applicationNoun(app.loanType) === kind,
+  );
+  if (inFlight) {
+    throw new ConvexError(
+      `You already have a ${kind} application in progress. Wait for it to be released or rejected before filing another.`,
+    );
+  }
+}
+
 export const submit = memberMutation({
   args: {
     coMakerMemberId: v.id("members"),
-    loanType: loanTypeValidator,
+    loanType: loanKindValidator,
     loanAmount: v.number(),
     deductionPerPayday: v.number(),
   },
@@ -69,16 +101,7 @@ export const submit = memberMutation({
       throw new ConvexError("The co-maker must be in permanent status.");
     }
 
-    // One loan at a time: anything not yet archived is still in flight.
-    const existing = await ctx.db
-      .query("applications")
-      .withIndex("by_member", (q) => q.eq("memberId", ctx.member._id))
-      .collect();
-    if (existing.some((app) => app.status !== "archived")) {
-      throw new ConvexError(
-        "You already have a loan application in progress. Wait for it to be released or rejected before filing another.",
-      );
-    }
+    await assertNoneInFlight(ctx, ctx.member, "loan");
 
     const now = Date.now();
     // Allocated in this same transaction so a failure cannot burn a number.
@@ -110,6 +133,50 @@ export const submit = memberMutation({
   },
 });
 
+/**
+ * Files a hospitalization or terminal illness claim.
+ *
+ * Claims skip the committee entirely, so they are created already at
+ * `chair_review`: the chair's decision is the only one, and `castDecision`
+ * refuses the committee seats on a claim. Numbered in the claim series.
+ */
+export const submitClaim = memberMutation({
+  args: {
+    claimType: claimTypeValidator,
+    amount: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const amountError = validateClaimAmount(args.amount);
+    if (amountError !== null) {
+      throw new ConvexError(amountError);
+    }
+
+    await assertNoneInFlight(ctx, ctx.member, "claim");
+
+    const now = Date.now();
+    // Allocated in this same transaction so a failure cannot burn a number.
+    const { year, seq, queueNumber } = await nextQueueNumber(ctx, now, "claim");
+
+    const applicationId = await ctx.db.insert("applications", {
+      queueNumber,
+      year,
+      seq,
+      memberId: ctx.member._id,
+      borrowerName: fullName(ctx.member),
+      loanType: args.claimType,
+      loanAmount: args.amount,
+      dateFiled: now, // frozen at submission, never recomputed
+      status: "chair_review",
+    });
+
+    await ctx.scheduler.runAfter(0, internal.notify.applicationFiled, {
+      applicationId,
+    });
+
+    return applicationId;
+  },
+});
+
 /* -------------------------------------------------------------------------- */
 /* Approval state machine                                                     */
 /* -------------------------------------------------------------------------- */
@@ -127,6 +194,13 @@ export const castDecision = approverMutation({
     }
 
     const role = ctx.member.role as "committee1" | "committee2" | "chair";
+    const claim = isClaim(app.loanType);
+
+    // Claims are the chair's alone. Checked before anything else so a
+    // committee seat cannot leave even an audit row on one.
+    if (claim && role !== "chair") {
+      throw new ConvexError("Claims are decided by the chair alone.");
+    }
 
     // A disapproval ends the application, so the borrower is owed a reason.
     // Enforced here rather than only in the form: the rule should hold for any
@@ -138,7 +212,8 @@ export const castDecision = approverMutation({
       );
     }
 
-    // 1. Stage gate — the chair only sees it after both committee members pass.
+    // 1. Stage gate — the chair only sees a loan after both committee members
+    //    pass. A claim is filed straight into `chair_review`.
     if (role === "chair") {
       if (app.status !== "chair_review") {
         throw new ConvexError(
@@ -193,12 +268,15 @@ export const castDecision = approverMutation({
     }
 
     // 4. Chair approval fixes the start date once. The spreadsheet used a
-    //    volatile TODAY() here, so the date silently moved every day.
+    //    volatile TODAY() here, so the date silently moved every day. A claim
+    //    has no deductions to start, so it gets no start date.
     if (role === "chair") {
-      await ctx.db.patch(app._id, {
-        status: "approved",
-        startDate: app.startDate ?? now,
-      });
+      await ctx.db.patch(
+        app._id,
+        claim
+          ? { status: "approved" }
+          : { status: "approved", startDate: app.startDate ?? now },
+      );
       await announce("treasurer");
       return;
     }
@@ -276,7 +354,9 @@ export const listMine = memberQuery({
       .query("applications")
       .withIndex("by_member", (q) => q.eq("memberId", ctx.member._id))
       .collect();
-    apps.sort((a, b) => b.seq - a.seq);
+    // By filing date, not `seq`: loans and claims are numbered separately, so
+    // their sequence numbers do not interleave.
+    apps.sort((a, b) => b.dateFiled - a.dateFiled);
     return apps;
   },
 });
@@ -316,7 +396,8 @@ export const listQueue = staffQuery({
       .query("applications")
       .filter((q) => q.neq(q.field("status"), "archived"))
       .collect();
-    open.sort((a, b) => a.year - b.year || a.seq - b.seq);
+    // Filing order across both series; `seq` only orders one series.
+    open.sort((a, b) => a.dateFiled - b.dateFiled);
 
     return await Promise.all(open.map((app) => withApprovals(ctx, app)));
   },
@@ -330,7 +411,7 @@ export const listArchive = staffQuery({
       .query("applications")
       .withIndex("by_status", (q) => q.eq("status", "archived"))
       .collect();
-    archived.sort((a, b) => b.year - a.year || b.seq - a.seq);
+    archived.sort((a, b) => b.dateFiled - a.dateFiled);
     return archived;
   },
 });

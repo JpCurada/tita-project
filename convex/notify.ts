@@ -15,7 +15,8 @@ import { internalAction } from "./_generated/server";
  */
 
 const FROM =
-  process.env.AUTH_EMAIL_FROM ?? "PIT FA Loans <onboarding@resend.dev>";
+  process.env.AUTH_EMAIL_FROM ??
+  "Loan and Hospitalization Claim <onboarding@resend.dev>";
 
 async function send(
   to: string[],
@@ -36,7 +37,11 @@ async function send(
     from: FROM,
     to: recipients,
     subject,
-    text: [...lines, "", "— PIT Faculty Association, Loan Committee"].join("\n"),
+    text: [
+      ...lines,
+      "",
+      "— Loan and Hospitalization Claim, PIT Faculty Association",
+    ].join("\n"),
   });
 
   if (error !== null) {
@@ -57,7 +62,10 @@ async function send(
   }
 }
 
-/** A new application has been filed: tell the two committee members. */
+/**
+ * A new application has been filed: tell the two committee members, or, for a
+ * claim, the chair, who decides claims alone.
+ */
 export const applicationFiled = internalAction({
   args: { applicationId: v.id("applications") },
   handler: async (ctx, args) => {
@@ -65,6 +73,24 @@ export const applicationFiled = internalAction({
       applicationId: args.applicationId,
     });
     if (details === null) return;
+
+    if (details.isClaim) {
+      await send(
+        details.chairEmails,
+        `New ${details.typeLabel.toLowerCase()} claim ${details.queueNumber} — ${details.borrowerName}`,
+        [
+          `${details.borrowerName} filed a ${details.typeLabel.toLowerCase()} claim.`,
+          "",
+          `Claim number: ${details.queueNumber}`,
+          `Amount:       ${details.amount}`,
+          `Filed:        ${details.dateFiled}`,
+          "",
+          "Claims are decided by the chair alone. It is waiting for your",
+          "decision.",
+        ],
+      );
+      return;
+    }
 
     await send(
       details.committeeEmails,
@@ -74,8 +100,8 @@ export const applicationFiled = internalAction({
         "",
         `Loan number:  ${details.queueNumber}`,
         `Amount:       ${details.amount}`,
-        `Per payday:   ${details.deduction}`,
-        `Co-maker:     ${details.coMakerName}`,
+        `Per payday:   ${details.deduction ?? "—"}`,
+        `Co-maker:     ${details.coMakerName ?? "—"}`,
         `Filed:        ${details.dateFiled}`,
         "",
         "It is waiting for your decision, and the chair's once both",
@@ -106,14 +132,15 @@ export const decisionRecorded = internalAction({
     });
     if (details === null) return;
 
-    const heading = `Loan ${details.queueNumber} — ${
+    const Noun = details.noun === "claim" ? "Claim" : "Loan";
+    const heading = `${Noun} ${details.queueNumber} — ${
       args.decision === "approved" ? "approved" : "disapproved"
     } by the ${args.approverTitle.toLowerCase()}`;
 
     const body = [
       `${args.approverTitle} ${args.approverName} ${
         args.decision === "approved" ? "approved" : "disapproved"
-      } loan ${details.queueNumber} for ${details.borrowerName}.`,
+      } ${details.noun} ${details.queueNumber} for ${details.borrowerName}.`,
     ];
 
     if (args.remarks !== undefined && args.remarks !== "") {
@@ -133,7 +160,7 @@ export const decisionRecorded = internalAction({
   },
 });
 
-/** The loan has been paid out. */
+/** The loan or claim has been paid out. */
 export const loanReleased = internalAction({
   args: {
     applicationId: v.id("applications"),
@@ -146,17 +173,18 @@ export const loanReleased = internalAction({
     });
     if (details === null) return;
 
+    const Noun = details.noun === "claim" ? "Claim" : "Loan";
     await send(
       [details.borrowerEmail],
-      `Loan ${details.queueNumber} released`,
+      `${Noun} ${details.queueNumber} released`,
       [
-        `Your loan ${details.queueNumber} has been released.`,
+        `Your ${details.noun} ${details.queueNumber} has been released.`,
         "",
         `Amount released:  ${args.releasedAmount}`,
         `Date released:    ${args.releasedOn}`,
         "",
         "Your application is now filed in the archive, and the printable",
-        "form is available from your loan record.",
+        `form is available from your ${details.noun} record.`,
       ],
     );
   },

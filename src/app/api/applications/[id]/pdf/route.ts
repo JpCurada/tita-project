@@ -3,6 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { isClaim } from "@convex/lib/loan";
 import { LoanFormPdf, type LoanFormData } from "@/components/LoanFormPdf";
 
 // @react-pdf/renderer needs Node APIs; it cannot run on the edge runtime.
@@ -38,7 +39,9 @@ export async function GET(
   return new Response(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="loan-${data.queueNumber}.pdf"`,
+      "Content-Disposition": `inline; filename="${
+        isClaim(data.loanType) ? "claim" : "loan"
+      }-${data.queueNumber}.pdf"`,
       "Cache-Control": "private, no-store",
     },
   });

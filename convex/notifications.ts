@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalQuery } from "./_generated/server";
-import { formatPeso } from "./lib/loan";
+import { applicationNoun, formatPeso, isClaim, typeLabel } from "./lib/loan";
 
 /**
  * Everything an outgoing email needs about one application, gathered in a
@@ -41,9 +41,16 @@ export const forApplication = internalQuery({
       queueNumber: app.queueNumber,
       borrowerName: app.borrowerName,
       borrowerEmail: borrower?.email ?? "",
-      coMakerName: app.coMakerName,
+      isClaim: isClaim(app.loanType),
+      noun: applicationNoun(app.loanType),
+      typeLabel: typeLabel(app.loanType),
+      // Unset on claims, which have neither.
+      coMakerName: app.coMakerName ?? null,
       amount: formatPeso(app.loanAmount),
-      deduction: `${formatPeso(app.deductionPerPayday)} × 10 paydays`,
+      deduction:
+        app.deductionPerPayday === undefined
+          ? null
+          : `${formatPeso(app.deductionPerPayday)} × 10 paydays`,
       dateFiled: manila(app.dateFiled),
       committeeEmails: [
         ...(await emailsFor("committee1")),

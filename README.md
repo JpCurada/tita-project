@@ -1,7 +1,8 @@
-# PIT FA Loan Application System
+# Loan and Hospitalization Claim
 
-Loan applications for the **PIT – Faculty Association**, Palompon Institute of Technology,
-Palompon, Leyte. Replaces the shared `LOAN FORM TESTING (1).xlsx` workbook.
+Loan applications and hospitalization / terminal illness claims for the **PIT – Faculty
+Association**, Palompon Institute of Technology, Palompon, Leyte. Replaces the shared
+`LOAN FORM TESTING (1).xlsx` workbook.
 
 Next.js (App Router) · Convex · deployed on Vercel.
 
@@ -27,9 +28,9 @@ each fixed here:
 | Role | Can do |
 |---|---|
 | `member` | File an application; see **only their own** |
-| `committee1` | Read the queue; cast one decision |
-| `committee2` | Read the queue; cast one decision |
-| `chair` | Final decision; manage members; may also record releases |
+| `committee1` | Read the queue; cast one decision on a loan |
+| `committee2` | Read the queue; cast one decision on a loan |
+| `chair` | Final decision on a loan; **sole** decision on a claim; manage members; may also record releases |
 | `treasurer` | Record releases. **Cannot** vote on approvals |
 
 Approval is restricted to the two committee seats and the chair — enforced in every Convex
@@ -59,8 +60,15 @@ member submits ──> pending ──> both committee approve ──> chair_revi
 `status` tracks lifecycle position; `outcome` records the terminal verdict, so archiving a
 rejection does not erase the fact that it was rejected.
 
-Queue numbers are `YY-NNNN` (e.g. `26-0007`), allocated per calendar year in Manila time and
-stored as a literal value.
+**Claims** (hospitalization, terminal illness) skip the committee. They are filed straight
+into `chair_review`, the chair's decision alone approves or rejects them, and `castDecision`
+refuses either committee seat on a claim. Approved claims go to the treasurer like loans. A
+claim asks only for the amount: there is no co-maker, deduction or term, so those fields are
+unset on claim rows. A member may have one loan and one claim in progress at the same time.
+
+Queue numbers are `YY-NNNN` for loans (e.g. `26-0007`) and `HYY-NNNN` for claims (e.g.
+`H26-0001`), each its own sequence, allocated per calendar year in Manila time and stored as a
+literal value.
 
 ---
 
@@ -167,6 +175,9 @@ src/
 
 ## Notes for the client
 
+- **Claim amounts** are entered by the member (whole pesos, up to ₱999,999) because no
+  schedule of claim amounts was given. If the association has fixed amounts or a ceiling,
+  `validateClaimAmount` in `convex/lib/loan.ts` is the one place to set them.
 - **Emergency loans** currently use the same amounts and 5-month term as regular loans; the
   type only changes what prints on the form. The spreadsheet's dropdown allowed `Regular`
   only while the form text said "REGULAR/EMERGENCY", so this needs confirmation.

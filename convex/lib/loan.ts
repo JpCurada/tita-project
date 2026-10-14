@@ -29,6 +29,56 @@ export const TERM_MONTHS = 5;
 export const LOAN_TYPES = ["regular", "emergency"] as const;
 export type LoanType = (typeof LOAN_TYPES)[number];
 
+/**
+ * Claims are assistance, not loans: nothing is repaid, so there is no co-maker,
+ * deduction or term, and the chair decides alone. Both kinds share one queue
+ * series (see convex/lib/queue.ts).
+ */
+export const CLAIM_TYPES = ["hospitalization", "terminal_illness"] as const;
+export type ClaimType = (typeof CLAIM_TYPES)[number];
+
+export type ApplicationType = LoanType | ClaimType;
+
+export function isClaim(type: ApplicationType): type is ClaimType {
+  return type === "hospitalization" || type === "terminal_illness";
+}
+
+/** The word the screens and emails use for one application of this type. */
+export function applicationNoun(type: ApplicationType): "loan" | "claim" {
+  return isClaim(type) ? "claim" : "loan";
+}
+
+/** Display names, as the client named them. */
+export function typeLabel(type: ApplicationType): string {
+  switch (type) {
+    case "regular":
+      return "Regular";
+    case "emergency":
+      return "Emergency";
+    case "hospitalization":
+      return "Hospitalization";
+    case "terminal_illness":
+      return "Terminal Illness";
+  }
+}
+
+/**
+ * The association gave no schedule of claim amounts, so the member states the
+ * figure and the chair judges it. The ceiling is only what the printed form can
+ * spell out in words (`amountInWords` stops below a million).
+ */
+export const MAX_CLAIM_AMOUNT = 999_999;
+
+export function validateClaimAmount(amount: number): string | null {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    return "Enter the amount claimed in whole pesos.";
+  }
+  if (amount > MAX_CLAIM_AMOUNT) {
+    return `A claim cannot exceed ${formatPeso(MAX_CLAIM_AMOUNT)}.`;
+  }
+  return null;
+}
+
 /** Returns the required deduction, or undefined if the amount is not offered. */
 export function deductionFor(loanAmount: number): number | undefined {
   return AMOUNT_TO_DEDUCTION[loanAmount];

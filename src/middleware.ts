@@ -4,14 +4,15 @@ import {
   nextjsMiddlewareRedirect,
 } from "@convex-dev/auth/nextjs/server";
 
-const isSignInPage = createRouteMatcher(["/signin"]);
+/** Pages for people who are not signed in yet: the landing page and sign-in. */
+const isEntryPage = createRouteMatcher(["/", "/signin"]);
 
 /**
  * `/api/auth` is the proxy the client posts sign-in and sign-up to; the
  * middleware itself answers it. Redirecting it would return the HTML sign-in
  * page to a caller expecting JSON.
  */
-const isPublicRoute = createRouteMatcher(["/signin", "/api/auth(.*)"]);
+const isPublicRoute = createRouteMatcher(["/", "/signin", "/api/auth(.*)"]);
 
 /**
  * Middleware only distinguishes signed-in from signed-out — it has no database
@@ -20,7 +21,7 @@ const isPublicRoute = createRouteMatcher(["/signin", "/api/auth(.*)"]);
  */
 export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   if (isPublicRoute(request)) {
-    if (isSignInPage(request) && (await convexAuth.isAuthenticated())) {
+    if (isEntryPage(request) && (await convexAuth.isAuthenticated())) {
       return nextjsMiddlewareRedirect(request, "/dashboard");
     }
     return;

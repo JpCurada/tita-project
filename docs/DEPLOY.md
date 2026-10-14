@@ -50,7 +50,7 @@ npx convex env set SITE_URL https://your-app.vercel.app --prod
 # Email. See section 6 — until a domain is verified these only reach the
 # address that owns the Resend account.
 npx convex env set AUTH_RESEND_KEY re_xxxxxxxx --prod
-npx convex env set AUTH_EMAIL_FROM "PIT FA Loans <onboarding@resend.dev>" --prod
+npx convex env set AUTH_EMAIL_FROM "Loan and Hospitalization Claim <onboarding@resend.dev>" --prod
 
 # Sign-up email confirmation. Leave this off until the domain is verified,
 # or every member with a pit.edu.ph address is locked out.
@@ -126,7 +126,7 @@ only delivers to the address that owns the account until a domain is verified.
 3. Once it shows **Verified**:
 
 ```bash
-npx convex env set AUTH_EMAIL_FROM "PIT FA Loans <loans@pit.edu.ph>" --prod
+npx convex env set AUTH_EMAIL_FROM "Loan and Hospitalization Claim <loans@pit.edu.ph>" --prod
 ```
 
 4. Optionally require confirmation at sign-up:

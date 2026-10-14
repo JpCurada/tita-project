@@ -44,10 +44,38 @@ export const decisionValidator = v.union(
   v.literal("rejected"),
 );
 
-export const loanTypeValidator = v.union(
+/**
+ * What was filed. Regular and emergency are loans: repaid by salary deduction,
+ * backed by a co-maker, decided by both committee members and then the chair.
+ * Hospitalization and terminal illness are claims: assistance paid out, not
+ * repaid, so no co-maker or deduction, and decided by the chair alone.
+ *
+ * Stored in `loanType` for every application. The field predates claims and
+ * renaming it would mean migrating every row; the name is internal.
+ */
+export const loanKindValidator = v.union(
   v.literal("regular"),
   v.literal("emergency"),
 );
+
+export const claimTypeValidator = v.union(
+  v.literal("hospitalization"),
+  v.literal("terminal_illness"),
+);
+
+export const loanTypeValidator = v.union(
+  v.literal("regular"),
+  v.literal("emergency"),
+  v.literal("hospitalization"),
+  v.literal("terminal_illness"),
+);
+
+/**
+ * Which queue-number sequence a counter row belongs to. Absent means the loan
+ * series: every counter written before claims existed is a loan counter, and
+ * new loan counters are written the same way so a year never has two of them.
+ */
+export const counterSeriesValidator = v.literal("claim");
 
 export default defineSchema({
   ...authTables,
@@ -76,19 +104,25 @@ export default defineSchema({
     .index("by_permanent", ["isPermanent", "active"]),
 
   applications: defineTable({
-    queueNumber: v.string(), // "26-0007" — assigned once, never recomputed
+    // "26-0007" for a loan, "H26-0001" for a claim — assigned once, never
+    // recomputed. `year`/`seq` are positions within that application's own
+    // series, so they only order rows of the same kind; sort mixed lists by
+    // `dateFiled`.
+    queueNumber: v.string(),
     year: v.number(),
     seq: v.number(),
     memberId: v.id("members"),
     borrowerName: v.string(), // denormalised: the name as filed
-    coMakerMemberId: v.id("members"),
-    coMakerName: v.string(),
+    // Loans only. A claim has no co-maker and is not repaid by deduction, so
+    // these stay unset on claims; every loan row carries all four.
+    coMakerMemberId: v.optional(v.id("members")),
+    coMakerName: v.optional(v.string()),
     loanType: loanTypeValidator,
-    loanAmount: v.number(),
-    deductionPerPayday: v.number(),
-    termMonths: v.number(),
+    loanAmount: v.number(), // the amount applied for or claimed
+    deductionPerPayday: v.optional(v.number()),
+    termMonths: v.optional(v.number()),
     dateFiled: v.number(),
-    startDate: v.optional(v.number()), // set once, on chair approval
+    startDate: v.optional(v.number()), // loans only: set once, on chair approval
     status: statusValidator,
     outcome: v.optional(outcomeValidator),
     releasedAt: v.optional(v.number()),
@@ -115,9 +149,10 @@ export default defineSchema({
     .index("by_application", ["applicationId"])
     .index("by_application_role", ["applicationId", "approverRole"]),
 
-  /** Per-year sequence for queue numbers. See convex/lib/queue.ts. */
+  /** Per-series, per-year sequence for queue numbers. See convex/lib/queue.ts. */
   counters: defineTable({
+    series: v.optional(counterSeriesValidator),
     year: v.number(),
     lastSeq: v.number(),
-  }).index("by_year", ["year"]),
+  }).index("by_series_year", ["series", "year"]),
 });

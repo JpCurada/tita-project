@@ -21,7 +21,7 @@ export default function MyApplicationPage() {
   return (
     <div>
       <Link href="/dashboard" className="btn-quiet mb-7 inline-block">
-        Back to my loans
+        Back to my applications
       </Link>
       <ApplicationDetail application={application} />
     </div>

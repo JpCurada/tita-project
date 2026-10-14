@@ -6,7 +6,13 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { QueueStub } from "@/components/QueueStub";
-import { errorMessage, formatPeso, toDateInputValue } from "@/lib/format";
+import {
+  errorMessage,
+  formatPeso,
+  isClaim,
+  toDateInputValue,
+  typeLabel,
+} from "@/lib/format";
 import { SkeletonPage } from "@/components/Skeleton";
 
 export default function ReleasePage() {
@@ -23,15 +29,15 @@ export default function ReleasePage() {
       <span className="eyebrow">Treasurer</span>
       <h1 className="page-title mt-1.5">Release</h1>
       <p className="mt-2 max-w-lg font-display text-[0.9375rem] leading-relaxed text-ink-pencil">
-        Approved loans waiting to be paid out. Recording a release files the
-        application into the archive.
+        Approved loans and claims waiting to be paid out. Recording a release
+        files the application into the archive.
       </p>
 
       <hr className="mt-6 border-rule-strong" />
 
       {ready.length === 0 ? (
         <p className="mt-8 border border-dashed border-rule-strong px-5 py-12 text-center text-sm text-ink-pencil">
-          No approved loans are waiting for release.
+          No approved loans or claims are waiting for release.
         </p>
       ) : (
         <ul className="stagger mt-8 space-y-5">
@@ -42,6 +48,9 @@ export default function ReleasePage() {
               queueNumber={app.queueNumber}
               borrowerName={app.borrowerName}
               loanAmount={app.loanAmount}
+              claimLabel={
+                isClaim(app.loanType) ? `${typeLabel(app.loanType)} claim` : null
+              }
             />
           ))}
         </ul>
@@ -55,11 +64,14 @@ function ReleaseCard({
   queueNumber,
   borrowerName,
   loanAmount,
+  claimLabel,
 }: {
   applicationId: Id<"applications">;
   queueNumber: string;
   borrowerName: string;
   loanAmount: number;
+  /** Set for a claim, e.g. "Hospitalization claim"; null for a loan. */
+  claimLabel: string | null;
 }) {
   const recordRelease = useMutation(api.applications.recordRelease);
   const [amount, setAmount] = useState(String(loanAmount));
@@ -97,7 +109,14 @@ function ReleaseCard({
     <li className="leaf p-5">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <QueueStub queueNumber={queueNumber} />
-        <span className="flex-1 text-sm font-medium">{borrowerName}</span>
+        <span className="flex-1 text-sm font-medium">
+          {borrowerName}
+          {claimLabel !== null && (
+            <span className="ml-2 text-xs font-normal text-ink-faint">
+              {claimLabel}
+            </span>
+          )}
+        </span>
         <span className="tnum font-mono text-sm text-ink-pencil">
           approved for {formatPeso(loanAmount)}
         </span>
@@ -162,7 +181,7 @@ function ReleaseCard({
         onCancel={() => setConfirming(false)}
       >
         <p>
-          Loan{" "}
+          {claimLabel === null ? "Loan" : "Claim"}{" "}
           <span className="tnum font-mono font-medium text-ink">
             {queueNumber}
           </span>{" "}

@@ -8,17 +8,24 @@
  *
  * `size="lg"` heads a detail page. `size="sm"` sits at the left of a queue row,
  * where a column of stubs reads as the queue itself.
+ *
+ * A claim number ("H26-0001") keeps its prefix on the spine with the year, so
+ * a column of stubs still tells claims from loans at a glance.
  */
 export function QueueStub({
   queueNumber,
   size = "sm",
   tone = "ink",
+  label,
 }: {
   queueNumber: string;
   size?: "sm" | "lg";
   tone?: "ink" | "viridian" | "muted";
+  label?: string;
 }) {
   const [year, seq] = queueNumber.split("-");
+  const caption =
+    label ?? (queueNumber.startsWith("H") ? "Claim number" : "Loan number");
 
   const palette = {
     ink: "border-ink/25 text-ink",
@@ -31,7 +38,7 @@ export function QueueStub({
   return (
     <div
       className={`relative flex shrink-0 items-stretch border-y border-l ${palette}`}
-      aria-label={`Loan number ${queueNumber}`}
+      aria-label={`${caption} ${queueNumber}`}
     >
       {/* Year, set vertically along the spine like a filing tab. */}
       <div
@@ -58,7 +65,7 @@ export function QueueStub({
           {seq}
         </span>
         {large && (
-          <span className="eyebrow mt-1.5 block text-current/55">Loan number</span>
+          <span className="eyebrow mt-1.5 block text-current/55">{caption}</span>
         )}
       </div>
 

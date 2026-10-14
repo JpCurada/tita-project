@@ -6,7 +6,7 @@ import Image from "next/image";
  * than by typing the address.
  */
 
-const LINKS = [
+export const SOCIAL_LINKS = [
   { href: "https://pit.edu.ph/", label: "pit.edu.ph", icon: Globe },
   {
     href: "https://www.facebook.com/PalomponInstituteOfTechnologyOfficial/",
@@ -46,7 +46,7 @@ export function SiteFooter({ tone = "light" }: { tone?: "light" | "dark" }) {
             }`}
           >
             <span className="block font-medium">
-              PIT Faculty Association · Loan Committee
+              Loan and Hospitalization Claim · PIT Faculty Association
             </span>
             <span className={dark ? "text-leaf/30" : "text-ink-faint"}>
               Palompon Institute of Technology, Palompon, Leyte
@@ -55,7 +55,7 @@ export function SiteFooter({ tone = "light" }: { tone?: "light" | "dark" }) {
         </div>
 
         <nav className="flex items-center gap-1">
-          {LINKS.map(({ href, label, icon: Icon }) => (
+          {SOCIAL_LINKS.map(({ href, label, icon: Icon }) => (
             <a
               key={href}
               href={href}

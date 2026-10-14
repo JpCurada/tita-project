@@ -9,7 +9,13 @@ import {
   Text,
   View,
 } from "@react-pdf/renderer";
-import { amountInWords, formatFormAmount } from "@convex/lib/loan";
+import {
+  amountInWords,
+  formatFormAmount,
+  isClaim,
+  typeLabel,
+  type ApplicationType,
+} from "@convex/lib/loan";
 import { PIT_LOGO_DATA_URI } from "@/assets/pitLogo";
 
 /**
@@ -23,6 +29,12 @@ import { PIT_LOGO_DATA_URI } from "@/assets/pitLogo";
  * Every value is filled from stored data. The template hardcodes the current
  * officers' names; here they come from the approvals audit trail, so the
  * printed page shows who actually decided.
+ *
+ * Hospitalization and terminal illness claims have no paper template of their
+ * own. They print a shortened version of the same page (`ClaimForm`): the same
+ * masthead, filing date, treasurer and decision blocks, without the co-maker,
+ * the deduction and the authorization, which only a loan has, and with the
+ * chair as the sole signatory.
  */
 
 const MANILA = "Asia/Manila";
@@ -96,10 +108,11 @@ const styles = StyleSheet.create({
 export type LoanFormData = {
   queueNumber: string;
   borrowerName: string;
-  coMakerName: string;
-  loanType: "regular" | "emergency";
+  // Loans only; unset on claims.
+  coMakerName?: string;
+  loanType: ApplicationType;
   loanAmount: number;
-  deductionPerPayday: number;
+  deductionPerPayday?: number;
   dateFiled: number;
   startDate?: number;
   outcome?: "approved" | "rejected";
@@ -156,6 +169,14 @@ function titleCaseWords(words: string): string {
 }
 
 export function LoanFormPdf({ data }: { data: LoanFormData }) {
+  if (isClaim(data.loanType)) {
+    return <ClaimForm data={data} />;
+  }
+
+  // Always set on a loan; the fallbacks only satisfy the shared type.
+  const coMakerName = data.coMakerName ?? "";
+  const deduction = data.deductionPerPayday ?? 0;
+
   const committee = ["committee1", "committee2"].map((role) =>
     data.decisions.find((d) => d.approverRole === role),
   );
@@ -202,8 +223,8 @@ export function LoanFormPdf({ data }: { data: LoanFormData }) {
             payable within five (5) months to be deducted every quincena in the
             amount of{" "}
             <Text style={styles.bold}>
-              {titleCaseWords(amountInWords(data.deductionPerPayday))} (
-              {formatFormAmount(data.deductionPerPayday)})
+              {titleCaseWords(amountInWords(deduction))} (
+              {formatFormAmount(deduction)})
             </Text>{" "}
             only effective{" "}
             <Text style={styles.inlineFill}>
@@ -227,7 +248,7 @@ export function LoanFormPdf({ data }: { data: LoanFormData }) {
 
         <View style={{ marginTop: 16 }}>
           <Signature
-            name={data.coMakerName}
+            name={coMakerName}
             caption="Signature Over Printed Name of Co-maker"
             extra="(Must be in permanent status)"
           />
@@ -310,8 +331,8 @@ export function LoanFormPdf({ data }: { data: LoanFormData }) {
             {"        "}I hereby authorize the cashier of the Institute to deduct
             the amount of{" "}
             <Text style={styles.bold}>
-              {titleCaseWords(amountInWords(data.deductionPerPayday))} (
-              {formatFormAmount(data.deductionPerPayday)})
+              {titleCaseWords(amountInWords(deduction))} (
+              {formatFormAmount(deduction)})
             </Text>{" "}
             each payday starting{" "}
             <Text style={styles.inlineFill}>
@@ -332,6 +353,109 @@ export function LoanFormPdf({ data }: { data: LoanFormData }) {
             name={data.borrowerName}
             caption="Signature Over Printed Name of Borrower"
           />
+        </View>
+      </Page>
+    </Document>
+  );
+}
+
+/** The claim page: the loan form's frame with only what a claim needs. */
+function ClaimForm({ data }: { data: LoanFormData }) {
+  const label = typeLabel(data.loanType);
+  const chair = data.decisions.find((d) => d.approverRole === "chair");
+  const approved = data.outcome === "approved";
+  const disapproved = data.outcome === "rejected";
+
+  return (
+    <Document
+      title={`${label} Claim ${data.queueNumber}`}
+      author="PIT Faculty Association"
+    >
+      <Page size="A4" style={styles.page}>
+        <View style={styles.masthead}>
+          <Image style={styles.seal} src={PIT_LOGO_DATA_URI} />
+          <View style={styles.mastheadText}>
+            <Text style={styles.title}>{label} Claim</Text>
+            <Text style={styles.committee}>LOAN COMMITTEE</Text>
+            <Text style={styles.committee}>PIT-FACULTY ASSOCIATION</Text>
+          </View>
+        </View>
+
+        <View style={styles.dateRow}>
+          <Text>Date Filed</Text>
+          <Fill value={fmt(data.dateFiled, { dateStyle: "long" })} width={136} />
+        </View>
+
+        <View style={styles.para}>
+          <Text>
+            {"        "}I hereby file a claim for{" "}
+            <Text style={styles.bold}>{label.toUpperCase()}</Text> assistance in
+            the amount of{" "}
+            <Text style={styles.bold}>
+              {amountInWords(data.loanAmount)} ({formatFormAmount(data.loanAmount)})
+            </Text>
+            .
+          </Text>
+        </View>
+
+        <View style={[styles.right, { marginTop: 22 }]}>
+          <Signature
+            name={data.borrowerName}
+            caption="Signature Over Printed Name of Claimant"
+          />
+        </View>
+
+        <View style={[styles.right, { marginTop: 14 }]}>
+          <Text style={styles.sigName}>
+            {data.treasurerName ?? data.releasedByName ?? " "}
+          </Text>
+          <Text style={[styles.caption, { width: 232 }]}>FA Treasurer</Text>
+        </View>
+
+        <View style={{ marginTop: 14, width: 232 }}>
+          <Text style={styles.sigName}>
+            {data.releasedAt === undefined
+              ? " "
+              : fmt(data.releasedAt, { dateStyle: "long" })}
+          </Text>
+          <Text style={styles.sigRule}>Signature &amp; Date Released</Text>
+        </View>
+
+        {/* Left-aligned for the same reason as on the loan form. */}
+        <View style={[styles.para, { marginTop: 18, textAlign: "left" }]}>
+          <Text>
+            {"        "}On this date, the{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(chair?.decidedAt, { day: "2-digit" }) || "      "}
+            </Text>{" "}
+            day of{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(chair?.decidedAt, { month: "long" }) || "            "}
+            </Text>
+            , 20{" "}
+            <Text style={styles.inlineFill}>
+              {fmt(chair?.decidedAt, { year: "2-digit" }) || "    "}
+            </Text>{" "}
+            I hereby{" "}
+            <Text style={styles.bold}>
+              {approved ? "approved" : disapproved ? "disapproved" : "approved/disapproved"}
+            </Text>{" "}
+            the above claim.
+          </Text>
+        </View>
+
+        <View style={{ marginTop: 28, alignItems: "center" }}>
+          <Signature
+            name={chair?.approverName ?? ""}
+            caption="Chair, Loan Committee"
+          />
+        </View>
+
+        <View
+          style={[styles.dateRow, { marginTop: 14, justifyContent: "flex-start" }]}
+        >
+          <Text>Claim No.</Text>
+          <Fill value={data.queueNumber} width={116} />
         </View>
       </Page>
     </Document>

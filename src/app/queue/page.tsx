@@ -5,7 +5,8 @@ import Link from "next/link";
 import { api } from "@convex/_generated/api";
 import { QueueStub } from "@/components/QueueStub";
 import { StatusBadge } from "@/components/StatusBadge";
-import { formatDate, formatPeso } from "@/lib/format";
+import { formatDate, formatPeso, isClaim, typeLabel } from "@/lib/format";
+import type { ApplicationType } from "@/lib/format";
 import { SkeletonPage } from "@/components/Skeleton";
 
 export default function QueuePage() {
@@ -22,13 +23,16 @@ export default function QueuePage() {
     member.role === "committee2" ||
     member.role === "chair";
 
-  /** True when this approver still owes a decision at the current stage. */
+  /**
+   * True when this approver still owes a decision at the current stage. A
+   * claim is filed straight to the chair, so it is never the committee's.
+   */
   const awaitingMe = (app: (typeof queue)[number]) => {
     if (!isApprover) return false;
     if (app.decisions.some((d) => d.approverRole === member.role)) return false;
     return member.role === "chair"
       ? app.status === "chair_review"
-      : app.status === "pending";
+      : !isClaim(app.loanType) && app.status === "pending";
   };
 
   const mine = queue.filter(awaitingMe);
@@ -99,6 +103,7 @@ function Row({
     _id: string;
     queueNumber: string;
     borrowerName: string;
+    loanType: ApplicationType;
     loanAmount: number;
     dateFiled: number;
     status: "pending" | "chair_review" | "approved" | "released" | "archived";
@@ -116,7 +121,14 @@ function Row({
           queueNumber={app.queueNumber}
           tone={emphasis ? "viridian" : "ink"}
         />
-        <span className="min-w-40 flex-1 text-sm">{app.borrowerName}</span>
+        <span className="min-w-40 flex-1 text-sm">
+          {app.borrowerName}
+          {isClaim(app.loanType) && (
+            <span className="ml-2 text-xs text-ink-faint">
+              {typeLabel(app.loanType)} claim
+            </span>
+          )}
+        </span>
         <span className="tnum font-mono text-sm">
           {formatPeso(app.loanAmount)}
         </span>

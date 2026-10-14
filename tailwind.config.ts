@@ -5,6 +5,18 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Object White — the public face (landing, sign-in). Pure white, one
+        // ink, hairlines, and a single coloured action taken from the seal's
+        // navy. `gray` is darkened from the reference's #86868b so body copy
+        // clears WCAG AA on white.
+        ow: {
+          ink: "#1d1d1f",
+          gray: "#6e6e73",
+          line: "#d2d2d7",
+          mist: "#f5f5f7",
+          accent: "#1a3d8f",
+          "accent-hover": "#132f70",
+        },
         // Bond paper and ledger ink, not UI grey.
         bond: "#F2EFE6",
         leaf: "#FBFAF6",
@@ -35,6 +47,7 @@ export default {
         display: ["var(--font-display)", "Georgia", "serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        object: ["var(--font-object)", "Helvetica Neue", "Arial", "sans-serif"],
       },
       fontSize: {
         micro: ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.08em" }],

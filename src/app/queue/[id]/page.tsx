@@ -8,7 +8,13 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { ApplicationDetail } from "@/components/ApplicationDetail";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { errorMessage, formatPeso, roleTitle } from "@/lib/format";
+import {
+  applicationNoun,
+  errorMessage,
+  formatPeso,
+  isClaim,
+  roleTitle,
+} from "@/lib/format";
 import { SkeletonDetail } from "@/components/Skeleton";
 
 export default function ReviewPage() {
@@ -38,10 +44,13 @@ export default function ReviewPage() {
   const alreadyVoted = application.decisions.some(
     (d) => d.approverRole === member.role,
   );
+  // Claims are the chair's alone; the server refuses a committee decision too.
+  const claim = isClaim(application.loanType);
+  const noun = applicationNoun(application.loanType);
   const atMyStage =
     member.role === "chair"
       ? application.status === "chair_review"
-      : application.status === "pending";
+      : !claim && application.status === "pending";
   const canDecide = isApprover && !alreadyVoted && atMyStage;
 
   async function decide(decision: "approved" | "rejected") {
@@ -89,7 +98,7 @@ export default function ReviewPage() {
                     className="input min-h-20 resize-y"
                     value={remarks}
                     onChange={(event) => setRemarks(event.target.value)}
-                    placeholder="Why this loan is being approved or turned down"
+                    placeholder={`Why this ${noun} is being approved or turned down`}
                   />
                 </div>
 
@@ -134,7 +143,9 @@ export default function ReviewPage() {
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-pencil">
                 {alreadyVoted
                   ? "You have already recorded your decision on this application."
-                  : member.role === "chair"
+                  : claim && member.role !== "chair"
+                    ? "Claims are decided by the chair alone. You can follow it here, but there is no committee decision to record."
+                    : member.role === "chair"
                     ? "Both committee members must approve before the chair decides."
                     : "This application has moved past the committee stage."}
               </p>
@@ -146,7 +157,7 @@ export default function ReviewPage() {
           <section className="mt-9 border-t-2 border-ink pt-6">
             <span className="eyebrow">Treasurer</span>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-pencil">
-              This loan is approved and ready for release. Record it on the{" "}
+              This {noun} is approved and ready for release. Record it on the{" "}
               <Link href="/release" className="btn-quiet">
                 release
               </Link>{" "}
@@ -174,7 +185,7 @@ export default function ReviewPage() {
         onCancel={() => setConfirming(null)}
       >
         <p>
-          Loan{" "}
+          {claim ? "Claim" : "Loan"}{" "}
           <span className="tnum font-mono font-medium text-ink">
             {application.queueNumber}
           </span>{" "}

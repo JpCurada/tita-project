@@ -30,7 +30,8 @@ export default function ArchivePage() {
       return (
         app.queueNumber.toLowerCase().includes(term) ||
         app.borrowerName.toLowerCase().includes(term) ||
-        app.coMakerName.toLowerCase().includes(term)
+        // Claims have no co-maker.
+        (app.coMakerName ?? "").toLowerCase().includes(term)
       );
     });
   }, [archive, filter, search]);
@@ -45,7 +46,8 @@ export default function ArchivePage() {
         {archive !== undefined && (
           <p className="tnum font-mono text-sm text-ink-pencil">
             {visible.length}
-            {visible.length !== archive.length && ` of ${archive.length}`} loans
+            {visible.length !== archive.length && ` of ${archive.length}`}{" "}
+            applications
           </p>
         )}
       </div>
@@ -84,17 +86,17 @@ export default function ArchivePage() {
         <p className="mt-8 border border-dashed border-rule-strong px-5 py-12 text-center text-sm text-ink-pencil">
           {archive.length === 0
             ? "Nothing has been archived yet."
-            : "No loans match that search."}
+            : "Nothing matches that search."}
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto">
           <table className="ledger">
             <caption className="sr-only">
-              Archived loan applications, most recent first
+              Archived loan and claim applications, most recent first
             </caption>
             <thead>
               <tr>
-                <th scope="col">Loan no.</th>
+                <th scope="col">No.</th>
                 <th scope="col">Borrower</th>
                 <th scope="col" className="text-right">
                   Amount

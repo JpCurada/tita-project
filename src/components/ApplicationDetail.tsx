@@ -6,7 +6,10 @@ import {
   formatDate,
   formatDateTime,
   formatPeso,
+  isClaim,
   roleSeat,
+  typeLabel,
+  type ApplicationType,
   type Status,
 } from "@/lib/format";
 
@@ -23,11 +26,12 @@ export type DetailApplication = {
   _id: string;
   queueNumber: string;
   borrowerName: string;
-  coMakerName: string;
-  loanType: "regular" | "emergency";
+  // Unset on claims, which have no co-maker and are not repaid.
+  coMakerName?: string;
+  loanType: ApplicationType;
   loanAmount: number;
-  deductionPerPayday: number;
-  termMonths: number;
+  deductionPerPayday?: number;
+  termMonths?: number;
   dateFiled: number;
   startDate?: number;
   status: Status;
@@ -39,6 +43,9 @@ export type DetailApplication = {
 
 /** The chain is genuinely ordered, so the rail encodes real sequence. */
 const CHAIN = ["committee1", "committee2", "chair"] as const;
+
+/** A claim goes to the chair alone; the committee seats never see it. */
+const CLAIM_CHAIN = ["chair"] as const;
 
 export function ApplicationDetail({
   application,
@@ -52,10 +59,17 @@ export function ApplicationDetail({
     application.status === "released" ||
     application.status === "archived";
 
+  const claim = isClaim(application.loanType);
+  const chain = claim ? CLAIM_CHAIN : CHAIN;
+
   return (
     <div>
       <header className="flex flex-wrap items-center justify-between gap-x-8 gap-y-5">
-        <QueueStub queueNumber={application.queueNumber} size="lg" />
+        <QueueStub
+          queueNumber={application.queueNumber}
+          size="lg"
+          label={claim ? "Claim number" : "Loan number"}
+        />
         <div className="flex flex-wrap items-center gap-4">
           <StatusBadge status={application.status} outcome={application.outcome} />
           {canPrint && (
@@ -77,32 +91,46 @@ export function ApplicationDetail({
       <section className="mt-7">
         <span className="eyebrow">Terms</span>
         <dl className="mt-3 grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4">
-          <Cell label="Borrower" value={application.borrowerName} />
-          <Cell label="Co-maker" value={application.coMakerName} />
           <Cell
-            label="Loan type"
-            value={application.loanType === "regular" ? "Regular" : "Emergency"}
+            label={claim ? "Claimant" : "Borrower"}
+            value={application.borrowerName}
+          />
+          {!claim && (
+            <Cell label="Co-maker" value={application.coMakerName ?? "—"} />
+          )}
+          <Cell
+            label={claim ? "Claim type" : "Loan type"}
+            value={typeLabel(application.loanType)}
           />
           <Cell label="Filed" value={formatDate(application.dateFiled)} />
-          <Cell label="Amount" value={formatPeso(application.loanAmount)} mono />
           <Cell
-            label="Per payday"
-            value={formatPeso(application.deductionPerPayday)}
+            label={claim ? "Amount claimed" : "Amount"}
+            value={formatPeso(application.loanAmount)}
             mono
           />
-          <Cell
-            label="Term"
-            value={`${application.termMonths} months · 10 paydays`}
-          />
-          <Cell
-            label="Effective"
-            value={
-              application.startDate === undefined
-                ? "On the chair's approval"
-                : formatDate(application.startDate)
-            }
-            muted={application.startDate === undefined}
-          />
+          {/* Repayment terms exist only for loans. */}
+          {!claim && (
+            <>
+              <Cell
+                label="Per payday"
+                value={formatPeso(application.deductionPerPayday ?? 0)}
+                mono
+              />
+              <Cell
+                label="Term"
+                value={`${application.termMonths ?? 0} months · 10 paydays`}
+              />
+              <Cell
+                label="Effective"
+                value={
+                  application.startDate === undefined
+                    ? "On the chair's approval"
+                    : formatDate(application.startDate)
+                }
+                muted={application.startDate === undefined}
+              />
+            </>
+          )}
           {application.releasedAt !== undefined && (
             <>
               <Cell label="Released" value={formatDate(application.releasedAt)} />
@@ -119,11 +147,11 @@ export function ApplicationDetail({
       <section className="mt-9">
         <span className="eyebrow">Decisions</span>
         <ol className="mt-3">
-          {CHAIN.map((role, index) => {
+          {chain.map((role, index) => {
             const decision = application.decisions.find(
               (d) => d.approverRole === role,
             );
-            const last = index === CHAIN.length - 1;
+            const last = index === chain.length - 1;
             const rejected = decision?.decision === "rejected";
 
             return (

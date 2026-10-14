@@ -153,6 +153,91 @@
   }
 }
 
+@layer components {
+  /* ---- Object White ----------------------------------------------------
+     The public pages. Scoped under one class so the shared controls (.input,
+     .btn-primary, PasswordField) pick up this skin here and keep the ledger
+     look everywhere else. */
+
+  .object-white {
+    @apply bg-white font-object text-ow-ink antialiased;
+  }
+
+  .object-white :focus-visible {
+    @apply ring-ow-accent ring-offset-white;
+  }
+
+  .object-white ::selection {
+    background: #1a3d8f;
+    color: #fff;
+  }
+
+  .object-white h1,
+  .object-white h2,
+  .object-white h3 {
+    letter-spacing: -0.03em;
+  }
+
+  /* Featherweight display: the reference's 250 with a heavier second line. */
+  .ow-display {
+    @apply font-object font-[250] leading-[1.02] tracking-[-0.045em] text-ow-ink;
+  }
+
+  .ow-eyebrow {
+    @apply text-[0.75rem] font-semibold uppercase tracking-[0.14em] text-ow-gray sm:text-[0.8125rem];
+  }
+
+  .ow-pill {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-full
+           bg-ow-accent px-6 py-3 text-[0.9375rem] font-semibold text-white
+           transition-[background-color,transform] duration-200 ease-out
+           hover:bg-ow-accent-hover active:scale-[0.97];
+  }
+
+  .ow-pill-sm {
+    @apply ow-pill px-3.5 py-1.5 text-[0.8125rem];
+  }
+
+  /* "Learn more ›": the chevron leans in on hover. */
+  .ow-link {
+    @apply inline-flex items-center gap-1 rounded text-ow-accent transition-colors duration-150
+           hover:text-ow-accent-hover;
+  }
+
+  .ow-link > .chev {
+    @apply inline-block transition-transform duration-200 ease-out;
+  }
+
+  .ow-link:hover > .chev {
+    transform: translateX(3px);
+  }
+
+  .ow-navlink {
+    @apply rounded text-[0.8125rem] font-medium text-ow-gray transition-colors duration-150
+           hover:text-ow-ink;
+  }
+
+  .object-white .label {
+    @apply mb-2 text-[0.8125rem] font-medium text-ow-ink;
+  }
+
+  .object-white .input {
+    @apply rounded-xl border-ow-line bg-white px-4 py-3 text-[0.9375rem] text-ow-ink
+           placeholder:text-ow-gray/70
+           hover:border-ow-gray/50
+           focus:border-ow-accent focus:ring-4 focus:ring-ow-accent/10;
+  }
+
+  .object-white .btn-primary {
+    @apply rounded-full bg-ow-accent font-semibold text-white shadow-none
+           hover:bg-ow-accent-hover hover:shadow-none;
+  }
+
+  .object-white .btn-quiet {
+    @apply text-ow-accent no-underline hover:text-ow-accent-hover hover:underline;
+  }
+}
+
 @layer utilities {
   /* The stub's torn edge. Colour comes from `text-*` on the element. */
   .perforated-r {

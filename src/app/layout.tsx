@@ -30,9 +30,9 @@ const mono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PIT FA Loans",
+  title: "Loan and Hospitalization Claim",
   description:
-    "Loan applications for the PIT Faculty Association — Palompon Institute of Technology",
+    "Loan applications and hospitalization claims for the PIT Faculty Association — Palompon Institute of Technology",
 };
 
 export default function RootLayout({

@@ -106,7 +106,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isChair = member.role === "chair";
   const canRelease = member.role === "treasurer" || isChair;
 
-  const links = [{ href: "/dashboard", label: "My loans" }];
+  const links = [{ href: "/dashboard", label: "My applications" }];
   if (isStaff) {
     links.push({ href: "/queue", label: "Queue" });
     if (canRelease) links.push({ href: "/release", label: "Release" });
@@ -124,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex h-14 items-center gap-4">
             <Link
               href="/dashboard"
-              className="group flex shrink-0 items-center gap-2.5"
+              className="group flex min-w-0 items-center gap-2.5"
             >
               <Image
                 src="/pit-logo.png"
@@ -138,13 +138,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="eyebrow hidden text-ink-faint lg:block">
                   Palompon Institute of Technology
                 </span>
-                <span className="block truncate font-display text-[0.9375rem] font-semibold text-ink transition-colors group-hover:text-viridian">
-                  <span className="lg:hidden">PIT Faculty Association</span>
-                  <span className="hidden lg:inline">
-                    Faculty Association
-                    <span className="font-normal text-ink-faint">
-                      {" · "}Loan Committee
-                    </span>
+                {/* The name is long for a phone header, so it may wrap to a
+                    second line there rather than push the sign-out button off. */}
+                <span className="block font-display text-[0.9375rem] font-semibold text-ink transition-colors group-hover:text-viridian">
+                  Loan and Hospitalization Claim
+                  <span className="hidden font-normal text-ink-faint xl:inline">
+                    {" · "}PIT Faculty Association
                   </span>
                 </span>
               </span>
